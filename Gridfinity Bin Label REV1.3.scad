@@ -38,7 +38,7 @@ batch_label_data = [
 
 /* [Part customization] */
 Component = "Socket head bolt"; // [Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Heat set inserts]
-M_size = "M3"; // [M1, M1.2, M1.4, M1.6, M2, M2.5, M3, M3.5, M4, M5, M6, M8, M10, M12]
+M_size = "M4"; // [M1, M1.2, M1.4, M1.6, M2, M2.5, M3, M3.5, M4, M5, M6, M8, M10, M12]
 hardware_length = 8;
 
 /* [Label customization] */
