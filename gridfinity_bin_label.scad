@@ -37,7 +37,7 @@ batch_label_data = [
 //Customisation -------------------------------------------------
 
 /* [Part customization] */
-Component = "Socket head bolt"; // [Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Heat set inserts]
+Component = "phillips head bolt"; // [phillips head bolt, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts]
 M_size = "M4"; // [M1, M1.2, M1.4, M1.6, M2, M2.5, M3, M3.5, M4, M5, M6, M8, M10, M12]
 hardware_length = 8;
 
@@ -186,6 +186,9 @@ module choose_Part_version(Part_version, hardware_length, width, height, M_size)
     } else if (Part_version == "Dome head bolt") {
         Dome_head(hardware_length, width, height);
         bolt_text(M_size, hardware_length, height);
+    } else if (Part_version == "phillips head bolt") {
+        Phillips_head(hardware_length, width, height);
+        bolt_text(M_size, hardware_length, height);
     } else if (Part_version == "Standard washer") {
         standard_washer(width, height);
         washer_text(M_size, height);        
@@ -194,6 +197,9 @@ module choose_Part_version(Part_version, hardware_length, width, height, M_size)
         washer_text(M_size, height);
     } else if (Part_version == "Standard nut") {
         standard_Nut(width, height);
+        nut_text(M_size, height);
+    } else if (Part_version == "Lock nut") {
+        lock_Nut(width, height);
         nut_text(M_size, height);
     } else if (Part_version == "Heat set inserts") {
         Heat_Set_Inserts(hardware_length, width, height);
@@ -213,6 +219,25 @@ module standard_Nut(width, height, vertical_offset = 2.5) {
     
     translate([4, -2.5, 0])
     cube([2.8, 5, text_height]);
+
+    }
+}
+
+module lock_Nut(width, height, vertical_offset = 2.5) {    
+    // Center the icon
+    translate([-2.5, vertical_offset, height]) {        
+    // Top view of the bolt head
+    difference() {    
+        cylinder(h=text_height, d=5, $fn=6); 
+        cylinder(h=text_height, d=3);
+    }
+    
+    // Side view of nut
+    translate([4, -2.5, 0])
+    cube([2.8, 5, text_height]);
+
+    translate([4, -2, 0])
+    cube([3.5, 4, text_height]);
 
     }
 }
@@ -432,6 +457,54 @@ module Dome_head(hardware_length, width, height, vertical_offset = 2.5) {
 }
 
 
+module Phillips_head(hardware_length, width, height, vertical_offset = 2.5) {
+    
+    // Set the display length to 20 if hardware_length exceeds 20
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    // Center the entire icon horizontally based on display_length
+    translate([-display_length / 2 - 2, vertical_offset, height]) {
+        
+        // Top view of the bolt head
+        difference() {    
+            cylinder(h=text_height, d=5); 
+            // cylinder(h=text_height, r=1.6, $fn=6);
+            translate([-0.5, -2, 0])
+            cube([1, 4, text_height]);
+            translate([-2, -0.5, 0])
+            cube([4, 1, text_height]);
+        }
+
+        
+        
+        // Side view of the bolt head
+        translate([6, 0, 0])
+        
+        difference() {
+            cylinder(h=text_height, d=5);
+            translate([0, -2.5, 0])
+            cube([4, 5, text_height]);
+        }
+        
+        
+        
+        // Side view of the bolt stem, with a gap if hardware_length > 20
+        if (hardware_length > 20) {
+            // Cap the visible length at 20 units and add a gap in the middle
+            translate([6, -1.25, 0])  
+            cube([8.5, 2.5, text_height]);  // First half (10 units)
+
+            translate([6 + 12, -1.25, 0])  
+            cube([8.5, 2.5, text_height]);  // Second half (10 units)
+            
+            
+        } else {
+            // Regular full-length stem if hardware_length <= 20
+            translate([6, -1.25, 0])  
+            cube([hardware_length, 2.5, text_height]);
+        }
+    }
+}
 
 
 // Base text Modules ------------------------------------------------------
