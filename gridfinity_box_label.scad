@@ -4,11 +4,11 @@
 //Label size
 Y_units = 5; // [4,5,7,8]
 
-//Show Devider line
-Show_Devider = true;
+//Show Divider line
+Show_Divider = true;
 
 // Choose logo type: emoji, character, or hardware icons
-LOGO_TYPE = "char"; // ["emoji", "char", "hardware"]
+LOGO_TYPE = "char"; // ["emoji", "char", "hardware", "none"]
 
 
 
@@ -33,7 +33,11 @@ Line_2_text = "Nuts";
 Line_3_text = "Washers";
 Line_4_text = "Inserts";
 
+Filter_Empty_Lines = true;
 
+// Introduce a line spacing factor for additional vertical spacing
+line_spacing_factor = 1.5; // Increase this to add more space between lines
+        
 //Flush text requires an AMS
 text_type = "Raised Text"; // [Raised Text, Flush Text]
 
@@ -49,7 +53,6 @@ text_size = 4.2;
 
 // Set a margin factor (adjustable)
 margin_factor = 0.15; // 15% margin on top and bottom
-
 
 
 /* [Additional settings] */
@@ -68,7 +71,7 @@ Font = str(text_font, ":style=", Font_Style);
 length = getDimensions(Y_units);  // Set length based on Y_units value
 z_max = height + text_height;
 
-translate([- (length / 2), - (width / 2), 0])
+
 
 
 label(
@@ -117,70 +120,72 @@ module label(length, width, height, radius,  champfer)
     }
 }
 
-
-
-
 module render_text() {
     // Array of text lines
-    lines = [Line_1_text, Line_2_text, Line_3_text, Line_4_text];
+    non_empty_lines = Filter_Empty_Lines
+        ? [for (line = [Line_1_text, Line_2_text, Line_3_text, Line_4_text]) if (line != "") line]
+        : [Line_1_text, Line_2_text, Line_3_text, Line_4_text];
 
-    // Filter out empty lines
-    non_empty_lines = [for (line = lines) if (line != "") line];
-
-    // Number of non-empty lines
+    // Calculate number of lines and spacing
     num_lines = len(non_empty_lines);
-    echo("Total non-empty lines:", num_lines);
+    line_spacing = text_size * line_spacing_factor;
 
     if (num_lines > 0) {
-        // Define the total height available for text
-        effective_height = width * (1 - 2 * margin_factor);
-        margin_spacing = width * margin_factor;
+        // Calculate the total height of the text block
+        total_text_height = (num_lines - 1) * line_spacing + text_size;
 
-        // Handle line spacing
-        line_spacing = (num_lines > 1)
-        ? effective_height / (num_lines - 1) // For multiple lines
-        : 0; // Single line, no spacing
+        // Determine vertical and horizontal offsets
+        x_offset = (LOGO_TYPE != "none") ? (length / 2 + width / 2) : (length / 2);
+        y_offset = width / 2;  // Center the block vertically on the object
 
-        // Render each line of text
+        // Adjust for proper vertical centering of the text block
+        y_start = y_offset + total_text_height / 2 - text_size / 2;
+
+        // Render each line
         linear_extrude(z_max) {
-        for (i = [0 : num_lines - 1]) {
-            y_position = (num_lines == 1)
-            ? width / 2 // Center vertically for single line
-            : width - margin_spacing - (line_spacing * i); // Spread lines evenly
+            for (i = [0 : num_lines - 1]) {
+                // Position each line from top to bottom
+                y_position = y_start - (i * line_spacing);
 
-            translate([
-            length / 2 + width / 2, // Center horizontally
-            y_position, // Dynamic vertical positioning
-            0 // Z-position
-            ])
-            text(non_empty_lines[i], size=text_size, font=Font, halign="center", valign="center");
+                translate([
+                    x_offset,    // Center horizontally
+                    y_position,  // Correct vertical centering
+                    0            // Z-position
+                ])
+                text(
+                    non_empty_lines[i], // Correct line order
+                    size = text_size,
+                    font = Font,
+                    halign = "center", // Center text horizontally
+                    valign = "center"  // Center text vertically
+                );
             }
         }
+    } else {
+        echo("No lines to render!");
     }
 }
 
 module render_logo( logo_name) {  
 
-    if (LOGO_TYPE == "emoji"){
-        render_emoji(LOGO_EMOJI);
+    if (LOGO_TYPE != "none") {
+        if (LOGO_TYPE == "emoji"){
+            render_emoji(LOGO_EMOJI);
+        }
+
+        if (LOGO_TYPE == "char"){
+            render_char(LOGO_CHAR);
+        }
+        if (LOGO_TYPE == "hardware"){
+            render_hardware(Hardware_type);
+        }
+        
+         if (Show_Divider && Y_units > 4){  
+            // Render the divider line next to the logo
+            translate([width, width / 2 - (width * 0.8) / 2, 0])
+            cube([1, width * 0.8, z_max]);
+         }
     }
-
-    if (LOGO_TYPE == "char"){
-        render_char(LOGO_CHAR);
-    }
-    if (LOGO_TYPE == "hardware"){
-        render_hardware(Hardware_type);
-    }
-    
-     if (Show_Devider && Y_units > 4){  
-        // Render the divider line next to the logo
-        translate([width, width / 2 - (width * 0.8) / 2, 0])
-        cube([1, width * 0.8, z_max]);
-     }
-
-
-
-
 }
 
 
