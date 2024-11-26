@@ -41,6 +41,10 @@ line_spacing_factor = 1.5; // Increase this to add more space between lines
 //Flush text requires an AMS
 text_type = "Raised Text"; // [Raised Text, Flush Text]
 
+// Raised Text Height
+text_height = .2;
+
+//  ;
 
 //Font type
 text_font = "Noto Sans SC:Noto Sans China"; // [HarmonyOS Sans, Inter, Inter Tight, Lora, Merriweather Sans, Montserrat, Noto Sans, Noto Sans SC:Noto Sans China, Noto Sans KR, Noto Emoji, Nunito, Nunito Sans, Open Sans, Open Sans Condensed, Oswald, Playfair Display, Plus Jakarta Sans, Raleway, Roboto, Roboto Condensed, Roboto Flex, Roboto Mono, Roboto Serif, Roboto Slab, Rubik, Source Sans 3, Ubuntu Sans, Ubuntu Sans Mono, Work Sans]
@@ -64,15 +68,13 @@ $fs = 0.1;
 $fa = 5;
 
 /* [Hidden] */
-text_height = (text_type == "Raised Text") ? 0.2 : 0.02;
+
+
 Font = str(text_font, ":style=", Font_Style);
 
 
 length = getDimensions(Y_units);  // Set length based on Y_units value
-z_max = height + text_height;
-
-
-
+z_max = height + ((text_type == "Raised Text") ? text_height : 0.02);
 
 label(
     length = length, 
