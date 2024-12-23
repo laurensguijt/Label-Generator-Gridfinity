@@ -37,7 +37,7 @@ batch_label_data = [
 //Customisation -------------------------------------------------
 
 /* [Part customization] */
-Component = "phillips head bolt"; // [phillips head bolt, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts]
+Component = "Socket head bolt"; // [phillips head bolt, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt]
 M_size = "M4"; // [M1, M1.2, M1.4, M1.6, M2, M2.5, M3, M3.5, M4, M5, M6, M8, M10, M12]
 hardware_length = 8;
 
@@ -78,19 +78,6 @@ $fa = 5;
 Font = str(text_font, ":style=", Font_Style);
 length = getDimensions(Y_units);
 text_height = (text_type == "Raised Text") ? 0.2 : 0.01;
-
-
-//label(
-//    length = length, 
-//    width = width, 
-//    height = height,
-//    radius = radius,
-//    champfer = champfer
-//);
-
-
-//generate_multiple_labels();
-
 
 
 // Check if single or batch export
@@ -176,6 +163,12 @@ module label(length, width, height, radius, champfer, Component, M_size, hardwar
 module choose_Part_version(Part_version, hardware_length, width, height, M_size) {
     if (Part_version == "Socket head bolt") {
         Socket_head(hardware_length, width, height);
+        bolt_text(M_size, hardware_length, height);
+    } else if (Part_version == "Torx head bolt") {
+        Torx_head(hardware_length, width, height);
+        bolt_text(M_size, hardware_length, height);
+    } else if (Part_version == "Countersunk Torx head bolt") {
+        Countersunk_Torx_head(hardware_length, width, height);
         bolt_text(M_size, hardware_length, height);
     } else if (Part_version == "Hex head bolt") {
         Hex_head(hardware_length, width, height);
@@ -303,6 +296,81 @@ module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
 }
 
 // Bolt icons modules  ------------------------------------------------------
+
+module Torx_head(hardware_length, width, height, vertical_offset = 2.5) {
+    
+    // Set the display length to 20 if hardware_length exceeds 20
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    // Center the entire icon horizontally based on display_length
+    translate([-display_length / 2 - 2, vertical_offset, height]) {
+        
+        // Top view of the bolt head
+        difference() {    
+            cylinder(h=text_height, d=5); 
+            // cylinder(h=text_height, r=1.6, $fn=6);
+            Torx_star(6, 2, height=2, rnd=0.1);
+        }
+        
+        // Side view of the bolt head
+        translate([3, -2.5, 0])
+        cube([4, 5, text_height]);
+        
+        // Side view of the bolt stem, with a gap if hardware_length > 20
+        if (hardware_length > 20) {
+            // Cap the visible length at 20 units and add a gap in the middle
+            translate([7, -1.25, 0])  
+            cube([8.5, 2.5, text_height]);  // First half (10 units)
+
+            translate([7 + 12, -1.25, 0])  
+            cube([8.5, 2.5, text_height]);  // Second half (10 units)
+            
+            
+        } else {
+            // Regular full-length stem if hardware_length <= 20
+            translate([7, -1.25, 0])  
+            cube([hardware_length, 2.5, text_height]);
+        }
+    }
+}
+
+module Countersunk_Torx_head(hardware_length, width, height, vertical_offset = 2.5) {
+    
+    // Set the display length to 20 if hardware_length exceeds 20
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    // Center the entire icon horizontally based on display_length
+    translate([-display_length / 2 - 2, vertical_offset, height]) {
+        
+        // Top view of the bolt head
+        difference() {    
+            cylinder(h=text_height, d=5); 
+            // cylinder(h=text_height, r=1.6, $fn=6);
+            Torx_star(6, 2, height=2, rnd=0.1);
+        }
+        
+        // Side view of the bolt head
+        translate([6.6, 0, 0])
+        //triangle
+        cylinder(r=3, h=text_height, $fn=3);
+        
+        // Side view of the bolt stem, with a gap if hardware_length > 20
+        if (hardware_length > 20) {
+            // Cap the visible length at 20 units and add a gap in the middle
+            translate([7, -1.25, 0])  
+            cube([8.5, 2.5, text_height]);  // First half (10 units)
+
+            translate([7 + 12, -1.25, 0])  
+            cube([8.5, 2.5, text_height]);  // Second half (10 units)
+            
+            
+        } else {
+            // Regular full-length stem if hardware_length <= 20
+            translate([7, -1.25, 0])  
+            cube([hardware_length, 2.5, text_height]);
+        }
+    }
+}
 
 module Socket_head(hardware_length, width, height, vertical_offset = 2.5) {
     
@@ -680,4 +748,32 @@ module __shape(
         translate ([length-radius,width-radius, 0]) cylinder (h = height, r=radius);
         translate ([length-radius, radius, 0]) cylinder (h = height, r=radius);
     }
+}
+
+
+
+// shape fucntions
+
+
+
+module Torx_star(points, point_len, height=2, rnd=0.1) {
+    fn=25;
+    point_deg = 360 / points;
+    point_deg_adjusted = point_deg + (-point_deg / 2);
+
+    for (i = [0 : points - 1]) {
+        rotate([0, 0, i * point_deg])
+        translate([0, -point_len, 0])
+            point(point_deg_adjusted, point_len, rnd, height, fn);
+    }  
+    
+    module point(deg, leng, rnd, height, fn=25) {
+    hull() {
+        cylinder(height, d=rnd, $fn=fn); // Base cylinder at the center
+        rotate([0, 0, -deg / 2])
+            translate([0, leng, 0]) cylinder(height, d=rnd); // Left edge
+        rotate([0, 0, deg / 2])
+            translate([0, leng, 0]) cylinder(height, d=rnd); // Right edge
+    }
+}
 }
