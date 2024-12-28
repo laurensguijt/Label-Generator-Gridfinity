@@ -100,8 +100,8 @@ if (batch_export) {
 // Corrected function for setting length based on Y_units
 function getDimensions(Y_units) =
     (Y_units == 1) ? 35.8 :
-    (Y_units == 2) ? 71.6 :
-    (Y_units == 3) ? 107.4 : 0;
+    (Y_units == 2) ? 77.8 :
+    (Y_units == 3) ? 119.8 : 0;
 
 
 
