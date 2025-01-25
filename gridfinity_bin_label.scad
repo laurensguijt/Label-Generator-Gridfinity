@@ -1,3 +1,7 @@
+/////////////////////////////////////////////
+// Custom label generator by Laurens Guijt //
+/////////////////////////////////////////////
+
 //////////////////////////////////////////////////////////////
 //                   BATCH LABEL DATA                      //
 //////////////////////////////////////////////////////////////
@@ -30,27 +34,25 @@ batch_label_data = [
 
 
 /* [Part customization] */
-Component = "Socket head bolt"; // [phillips head bolt, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt]
-diameter = "M4"; // Free text field, e.g. "M4", "1/4-20", "#8-32"
-hardware_length = 8;
+Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Torx wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt]
+diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
+hardware_length = 24;
 
 /* [Label customization] */
-Y_units = 1; // [1,2,3]
-Label_color = "#000000"; // color
-Content_color= "#FFFFFF"; // color
+Y_units       = 1;          // [1,2,3]
+Label_color   = "#000000";  // color
+Content_color = "#FFFFFF";  // color
 
 /* [Text customization] */
+
 // Font type
-text_font = "Noto Sans SC:Noto Sans China"; // [HarmonyOS Sans, Inter, Inter Tight, ...]
-
+text_font = "Noto Sans SC:Noto Sans China"; // [HarmonyOS Sans, Inter, Inter Tight, Lora, Merriweather Sans, Montserrat, Noto Sans, Noto Sans SC:Noto Sans China, Noto Sans KR, Noto Emoji, Nunito, Nunito Sans, Open Sans, Open Sans Condensed, Oswald, Playfair Display, Plus Jakarta Sans, Raleway, Roboto, Roboto Condensed, Roboto Flex, Roboto Mono, Roboto Serif, Roboto Slab, Rubik, Source Sans 3, Ubuntu Sans, Ubuntu Sans Mono, Work Sans]
 // Font Style
-Font_Style = "Bold"; // [Regular,Black,Bold,ExtraBol,ExtraLight,Light,Medium,SemiBold,Thin,Italic,...]
-
+Font_Style = "Bold"; // [Regular,Black,Bold,ExtraBol,ExtraLight,Light,Medium,SemiBold,Thin,Italic,Black Italic,Bold Italic,ExtraBold Italic,ExtraLight Italic,Light Italic,Medium Italic,SemiBold Italic,Thin Italic]
 // Flush text requires an AMS
-text_type = "Raised Text"; // [Raised Text, Flush Text]
-
-// Font size
-text_size = 4.2;
+text_type  = "Raised Text";                  // [Raised Text, Flush Text]
+//Font size
+text_size  = 4.2;
 
 /* [Batch exporter] */
 // Enable this feature if you want generate a lot of different labels at once.
@@ -104,7 +106,7 @@ function getDimensions(Y_units) =
 //            BATCH LABEL GENERATION (Multiple)            //
 //////////////////////////////////////////////////////////////
 module generate_multiple_labels() {
-    columns           = 3;              // Number of columns
+    columns           = 3;              
     horizontal_offset = length + 3;     
     vertical_offset   = 12;            
 
@@ -207,6 +209,14 @@ module choose_Part_version(Part_version, hardware_length, width, height, diamete
     } else if (Part_version == "Heat set inserts") {
         Heat_Set_Inserts(hardware_length, width, height);
         bolt_text(diameter, hardware_length, height);
+
+    } else if (Part_version == "phillips wood screw") {
+        Phillips_Wood_Screw(hardware_length, width, height);
+        bolt_text(diameter, hardware_length, height);
+
+    } else if (Part_version == "Torx wood screw") {
+        Torx_Wood_Screw(hardware_length, width, height);
+        bolt_text(diameter, hardware_length, height);
     }
 }
 
@@ -293,43 +303,61 @@ module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
 //            BOLT ICONS (Top View + Side View)            //
 //////////////////////////////////////////////////////////////
 
-// Unified stem drawer (handles "split" for length>20)
-module drawBoltStem(hardware_length, text_height, start=[7, -1.25, 0], partialLength=8.5, gapBetween=12, thickness=2.5) {
-    if (hardware_length > 20) {
-        // two segments with gap
+// "drawBoltStem" for typical bolts/screws
+module drawBoltStem(hardware_length, text_height, start=[7, -1.25, 0], thickness=2.5) {
+    // The max length scales with Y_units; e.g. Y_units=1 => 20, Y_units=2 => 40, etc.
+    maxLen = 20 * Y_units;
+
+    // Final length is either the actual hardware_length or the scaled maxLen
+    finalLen = (hardware_length > maxLen) ? maxLen : hardware_length;
+
+    if (hardware_length > maxLen) {
+        // For bolts exceeding maxLen, show a "split" icon
+        gapBetween    = 2;  // small gap to indicate it's a longer bolt
+        segmentLength = (finalLen - gapBetween) / 2;  // split finalLen into two segments
+
+        // First partial segment
         translate(start)
-            cube([partialLength, thickness, text_height]);
-        translate([start[0] + partialLength + gapBetween, start[1], start[2]])
-            cube([partialLength, thickness, text_height]);
+            cube([segmentLength, thickness, text_height]);
+
+        // Second partial segment
+        translate([
+            start[0] + segmentLength + gapBetween, 
+            start[1], 
+            start[2]
+        ])
+            cube([segmentLength, thickness, text_height]);
+
     } else {
-        // normal full stem
+        // If the bolt length is <= maxLen, draw one solid stem
         translate(start)
-            cube([hardware_length, thickness, text_height]);
+            cube([finalLen, thickness, text_height]);
     }
 }
 
 // Torx star shape for top view
 module Torx_star(points, point_len, height=2, rnd=0.1) {
+    fn=25;
     point_deg = 360 / points;
+    point_deg_adjusted = point_deg + (-point_deg / 2);
+
     for (i = [0 : points - 1]) {
-        rotate([0, 0, i * point_deg]) {
-            translate([0, -point_len, 0])
-                Torx_point(point_deg, point_len, rnd, height);
-        }
+        rotate([0, 0, i * point_deg])
+        translate([0, -point_len, 0])
+            point(point_deg_adjusted, point_len, rnd, height, fn);
+    }  
+    
+    module point(deg, leng, rnd, height, fn=25) {
+    hull() {
+        cylinder(height, d=rnd, $fn=fn); // Base cylinder at the center
+        rotate([0, 0, -deg / 2])
+            translate([0, leng, 0]) cylinder(height, d=rnd); // Left edge
+        rotate([0, 0, deg / 2])
+            translate([0, leng, 0]) cylinder(height, d=rnd); // Right edge
     }
+}
 }
 
-module Torx_point(deg, leng, rnd, height, fn=25) {
-    hull() {
-        cylinder(height=height, d=rnd, $fn=fn);
-        rotate([0, 0, -deg/2])
-            translate([0, leng, 0])
-                cylinder(height=height, d=rnd, $fn=fn);
-        rotate([0, 0, deg/2])
-            translate([0, leng, 0])
-                cylinder(height=height, d=rnd, $fn=fn);
-    }
-}
 
 // Torx head bolt
 module Torx_head(hardware_length, width, height, vertical_offset = 2.5) {
@@ -340,7 +368,7 @@ module Torx_head(hardware_length, width, height, vertical_offset = 2.5) {
             cylinder(h=text_height, d=5);
             Torx_star(6, 2, height=2, rnd=0.1);
         }
-        // side view of head
+        // side view
         translate([3, -2.5, 0])
             cube([4, 5, text_height]);
 
@@ -376,7 +404,7 @@ module Socket_head(hardware_length, width, height, vertical_offset = 2.5) {
             cylinder(h=text_height, d=5);
             cylinder(h=text_height, r=1.6, $fn=6);
         }
-        // side view of head
+        // side view
         translate([3, -2.5, 0])
             cube([4, 5, text_height]);
 
@@ -486,6 +514,92 @@ module Phillips_head_countersunk(hardware_length, width, height, vertical_offset
     }
 }
 
+//////////////////////////////////////////////////////////////
+//         PHILLIPS WOOD SCREW (FIXED TIP ALIGNMENT)       //
+//////////////////////////////////////////////////////////////
+module Phillips_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5) {
+    // We'll place everything in "real" X after we clamp a final stem length
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+    
+    // The start of the main stem
+    stemStart = [5, -1.25, 0];
+
+    // We want to shorten the actual stem by 1.5 for the tip
+    // Then clamp it to the same maxLen logic used in drawBoltStem
+    maxLen    = 20 * Y_units;
+    rawStem   = hardware_length - 1.5;  
+    finalStem = (rawStem > maxLen) ? maxLen : rawStem;
+    
+    translate([-display_length/2 - 2, vertical_offset, height]) {
+        // Head (top view)
+        difference() {
+            cylinder(h=text_height, d=5);
+            // Phillips "plus"
+            translate([-0.5, -2, 0]) cube([1, 4, text_height]);
+            translate([-2, -0.5, 0]) cube([4, 1, text_height]);
+        }
+
+        // Countersunk side
+        translate([5, 0, 0])
+            cylinder(r=3, h=text_height, $fn=3);
+
+        // Draw the stem with the same logic as drawBoltStem,
+        // but using finalStem (the "shortened" length).
+        // That means if rawStem is still bigger than maxLen,
+        // it will be split within the function as well.
+        drawBoltStem(rawStem, text_height, stemStart);
+
+        // Place the tip exactly at the end of the final stem, not the full hardware_length
+        translate([stemStart[0] + finalStem, 0, 0]) {
+            linear_extrude(height=text_height)
+                polygon(
+                    points = [[0, 1.25],[2, 0],[0, -1.25]],
+                    paths  = [[0, 1, 2]]
+                );
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////
+//          TORX WOOD SCREW (FIXED TIP ALIGNMENT)          //
+//////////////////////////////////////////////////////////////
+module Torx_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5) {
+    // We'll place everything in "real" X after we clamp a final stem length
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+    
+    // The start of the main stem
+    stemStart = [5, -1.25, 0];
+
+    // We want to shorten the actual stem by 1.5 for the tip
+    // Then clamp it to the same maxLen logic used in drawBoltStem
+    maxLen    = 20 * Y_units;
+    rawStem   = hardware_length - 1.5;  
+    finalStem = (rawStem > maxLen) ? maxLen : rawStem;
+    
+    translate([-display_length/2 - 2, vertical_offset, height]) {
+        // top view (torx head)
+        difference() {
+            cylinder(h=text_height, d=5);
+            Torx_star(6, 2, height=2, rnd=0.1);
+        }
+
+        // Countersunk side
+        translate([5, 0, 0])
+            cylinder(r=3, h=text_height, $fn=3);
+
+        // Main stem (shortened by 1.5). We pass 'rawStem' so drawBoltStem can do the split if needed.
+        drawBoltStem(rawStem, text_height, stemStart);
+
+        // Place tip exactly at the end of that final stem
+        translate([stemStart[0] + finalStem, 0, 0]) {
+            linear_extrude(height=text_height)
+                polygon(
+                    points = [[0,  1.25],[2, 0],[0, -1.25]],
+                    paths  = [[0, 1, 2]]
+                );
+        }
+    }
+}
 
 //////////////////////////////////////////////////////////////
 //                       TEXT MODULES                      //
