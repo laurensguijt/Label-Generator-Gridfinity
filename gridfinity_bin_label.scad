@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////
 //                   BATCH LABEL DATA                      //
 //////////////////////////////////////////////////////////////
+
 batch_label_data = [
     ["Dome head bolt", "M2", 8],
     ["Dome head bolt", "M2", 12],
@@ -34,7 +35,7 @@ batch_label_data = [
 
 
 /* [Part customization] */
-Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Torx wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt]
+Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Wall Anchor, Torx wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt]
 diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
 hardware_length = 24;
 
@@ -209,6 +210,9 @@ module choose_Part_version(Part_version, hardware_length, width, height, diamete
     } else if (Part_version == "Heat set inserts") {
         Heat_Set_Inserts(hardware_length, width, height);
         bolt_text(diameter, hardware_length, height);
+    } else if (Part_version == "Wall Anchor") {
+        Wall_Anchor(hardware_length, width, height);
+        bolt_text(diameter, hardware_length, height);
 
     } else if (Part_version == "phillips wood screw") {
         Phillips_Wood_Screw(hardware_length, width, height);
@@ -297,6 +301,43 @@ module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
         translate([8, -2.5, 0])  cube([2, 5, text_height]);
     }
 }
+
+module Wall_Anchor(hardware_length, width, height, vertical_offset = 2.5) {
+    translate([-4, vertical_offset, height]) {
+        difference() {
+            // 1) The main geometry, combined via union()
+            union() {
+                // The extruded polygons
+                linear_extrude(height = text_height)
+                    translate([-2,  0, 0])
+                    polygon(points=[[0,2],[-2,1],[-2,-1],[0,-2]], paths=[[0,1,2,3]]);
+                linear_extrude(height = text_height)
+                    translate([-0.5, 0, 0])
+                    polygon(points=[[0,2],[-1.5,1.5],[-1.5,-1.5],[0,-2]], paths=[[0,1,2,3]]);
+                linear_extrude(height = text_height)
+                    translate([1,    0, 0])
+                    polygon(points=[[0,2],[-1.5,1.5],[-1.5,-1.5],[0,-2]], paths=[[0,1,2,3]]);
+                linear_extrude(height = text_height)
+                    translate([2.5,  0, 0])
+                    polygon(points=[[0,2],[-1.5,1.5],[-1.5,-1.5],[0,-2]], paths=[[0,1,2,3]]);
+                linear_extrude(height = text_height)
+                    translate([4,    0, 0])
+                    polygon(points=[[0,2],[-1.5,1.5],[-1.5,-1.5],[0,-2]], paths=[[0,1,2,3]]);
+
+                // A couple more cubes for shape
+                translate([4, -1.5, 0])
+                    cube([7, 3, text_height]);
+                translate([11, -2, 0])
+                    cube([1, 4, text_height]);
+            }
+
+            // 2) The cutting object: this is subtracted (removed) from the union above
+            translate([-4, -0.25, 0])
+                cube([10, 0.5, 3]);
+        }
+    }
+}
+
 
 
 //////////////////////////////////////////////////////////////
@@ -514,9 +555,8 @@ module Phillips_head_countersunk(hardware_length, width, height, vertical_offset
     }
 }
 
-//////////////////////////////////////////////////////////////
-//         PHILLIPS WOOD SCREW (FIXED TIP ALIGNMENT)       //
-//////////////////////////////////////////////////////////////
+
+//Philips wood screw 
 module Phillips_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5) {
     // We'll place everything in "real" X after we clamp a final stem length
     display_length = (hardware_length > 20) ? 20 : hardware_length;
@@ -560,9 +600,7 @@ module Phillips_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5
     }
 }
 
-//////////////////////////////////////////////////////////////
-//          TORX WOOD SCREW (FIXED TIP ALIGNMENT)          //
-//////////////////////////////////////////////////////////////
+//Torx wood screw 
 module Torx_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5) {
     // We'll place everything in "real" X after we clamp a final stem length
     display_length = (hardware_length > 20) ? 20 : hardware_length;
