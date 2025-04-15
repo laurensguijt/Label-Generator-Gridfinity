@@ -35,7 +35,7 @@ batch_label_data = [
 
 
 /* [Part customization] */
-Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Wall Anchor, Torx wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt]
+Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Wall Anchor, Torx wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt, None, Custom Text]
 diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
 hardware_length = 24;
 
@@ -45,7 +45,6 @@ Label_color   = "#000000";  // color
 Content_color = "#FFFFFF";  // color
 
 /* [Text customization] */
-
 // Font type
 text_font = "Noto Sans SC:Noto Sans China"; // [HarmonyOS Sans, Inter, Inter Tight, Lora, Merriweather Sans, Montserrat, Noto Sans, Noto Sans SC:Noto Sans China, Noto Sans KR, Noto Emoji, Nunito, Nunito Sans, Open Sans, Open Sans Condensed, Oswald, Playfair Display, Plus Jakarta Sans, Raleway, Roboto, Roboto Condensed, Roboto Flex, Roboto Mono, Roboto Serif, Roboto Slab, Rubik, Source Sans 3, Ubuntu Sans, Ubuntu Sans Mono, Work Sans]
 // Font Style
@@ -54,6 +53,8 @@ Font_Style = "Bold"; // [Regular,Black,Bold,ExtraBol,ExtraLight,Light,Medium,Sem
 text_type  = "Raised Text";                  // [Raised Text, Flush Text]
 //Font size
 text_size  = 4.2;
+// Custom text (only used when Component is set to "Custom Text")
+custom_text = "Custom";
 
 /* [Batch exporter] */
 // Enable this feature if you want generate a lot of different labels at once.
@@ -159,7 +160,25 @@ module label(length, width, height, radius, champfer, Component, diameter, hardw
 //           DISPATCH: Which Part Icon to Draw?            //
 //////////////////////////////////////////////////////////////
 module choose_Part_version(Part_version, hardware_length, width, height, diameter) {
-    if (Part_version == "Socket head bolt") {
+    if (Part_version == "None") {
+        // Don't draw any icon, just show the text
+        translate([0, 0, height])
+            linear_extrude(height=text_height)
+                text(str(diameter, "x", hardware_length),
+                     size   = text_size,
+                     font   = Font,
+                     valign = "center",
+                     halign = "center");
+    } else if (Part_version == "Custom Text") {
+        // Show only custom text
+        translate([0, 0, height])
+            linear_extrude(height=text_height)
+                text(custom_text,
+                     size   = text_size,
+                     font   = Font,
+                     valign = "center",
+                     halign = "center");
+    } else if (Part_version == "Socket head bolt") {
         Socket_head(hardware_length, width, height);
         bolt_text(diameter, hardware_length, height);
 
