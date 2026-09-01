@@ -40,7 +40,7 @@ diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
 hardware_length = 24;
 
 /* [Label customization] */
-Y_units       = 1;          // [1,2,3]
+Y_units       = 1;          // [1,2,3,4]
 Label_color   = "#000000";  // color
 Content_color = "#FFFFFF";  // color
 
@@ -73,7 +73,7 @@ $fa      = 5;
 /* [Hidden] */
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
-text_height = (text_type == "Raised Text") ? 0.2 : 0.01;
+text_height = (text_type == "Raised Text") ? 0.4 : 0.01;
 
 
 //////////////////////////////////////////////////////////////
@@ -101,6 +101,7 @@ function getDimensions(Y_units) =
     (Y_units == 1) ? 35.8 :
     (Y_units == 2) ? 77.8 :
     (Y_units == 3) ? 119.8 :
+    (Y_units == 4) ? 161.8 :
     0;
 
 
