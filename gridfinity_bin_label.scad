@@ -53,8 +53,10 @@ Font_Style = "Bold"; // [Regular,Black,Bold,ExtraBol,ExtraLight,Light,Medium,Sem
 text_type  = "Raised Text";                  // [Raised Text, Flush Text]
 //Font size
 text_size  = 4.2;
-// Custom text (only used when Component is set to "Custom Text")
+// Custom text, first line (only used when Component is set to "Custom Text")
 custom_text = "Custom";
+// Custom text, second line (leave empty to show the first line full size and centered)
+custom_text_line2 = "";
 
 /* [Batch exporter] */
 // Enable this feature if you want generate a lot of different labels at once.
@@ -170,14 +172,8 @@ module choose_Part_version(Part_version, hardware_length, width, height, diamete
                      valign = "center",
                      halign = "center");
     } else if (Part_version == "Custom Text") {
-        // Show only custom text
-        translate([0, 0, height])
-            linear_extrude(height=text_height)
-                text(custom_text,
-                     size   = text_size,
-                     font   = Font,
-                     valign = "center",
-                     halign = "center");
+        // Show only custom text (one or two lines)
+        custom_text_lines(custom_text, custom_text_line2, height);
     } else if (Part_version == "Socket head bolt") {
         Socket_head(hardware_length, width, height);
         bolt_text(diameter, hardware_length, height);
@@ -736,6 +732,36 @@ module washer_text(diameter, height) {
                  valign = "center",
                  halign = "center");
 }
+
+// Custom text on one or two lines.
+// A single line is centered and full size, two lines use the same rows as the
+// icon/text layout of the hardware labels.
+module custom_text_lines(line1, line2, height) {
+    if (!is_blank(line1) && !is_blank(line2)) {
+        custom_text_line(line1, 2.5, height);
+        custom_text_line(line2, -3, height);
+    } else if (is_blank(line1)) {
+        custom_text_line(line2, 0, height);
+    } else {
+        custom_text_line(line1, 0, height);
+    }
+}
+
+module custom_text_line(line, vertical_offset, height) {
+    translate([0, vertical_offset, height])
+        linear_extrude(height=text_height)
+            text(line,
+                 size   = text_size,
+                 font   = Font,
+                 valign = "center",
+                 halign = "center");
+}
+
+// true for an empty string or a string containing only spaces
+function is_blank(s, i = 0) =
+    (i >= len(s)) ? true :
+    (s[i] != " ") ? false :
+    is_blank(s, i + 1);
 
 
 //////////////////////////////////////////////////////////////
