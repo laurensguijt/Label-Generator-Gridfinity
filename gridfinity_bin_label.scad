@@ -52,7 +52,7 @@ Drive = "Phillips";  // [Hex socket, Phillips, Torx, Torx TR, Slotted]
 Tip   = "Machine";   // [Machine, Wood]
 
 /* [Nut (only used when Category is Nut)] */
-Nut_type = "Standard"; // [Standard, Tall, Square, Lock, Cap, Disc, Wing, Slide-in T-nut, Hammer]
+Nut_type = "Standard"; // [Standard, Tall, Square, Lock, Castle, Cap, Disc, Wing, Slide-in T-nut, Hammer]
 
 /* [Washer (only used when Category is Washer)] */
 Washer_type = "Standard"; // [Standard, Spring]
@@ -259,6 +259,7 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
         else if (type == "Tall")           Tall_Nut(width, height);
         else if (type == "Square")         Square_Nut(width, height);
         else if (type == "Lock")           lock_Nut(width, height);
+        else if (type == "Castle")         Castle_Nut(width, height);
         else if (type == "Cap")            Cap_Nut(width, height);
         else if (type == "Disc")           Disc_Nut(width, height);
         else if (type == "Wing")           Wing_Nut(width, height);
@@ -365,6 +366,30 @@ module lock_Nut(width, height, vertical_offset = 2.5) {
 
         translate([4, -2, 0])
             cube([3.5, 4, text_height]);
+    }
+}
+
+// Castle nut / slotted nut (DIN 935): hex body with a slotted crown for a split pin
+module Castle_Nut(width, height, vertical_offset = 2.5) {
+    translate([-3.3, vertical_offset, height]) {
+        // top view: hex with threaded hole and the three slots across the crown
+        difference() {
+            cylinder(h=text_height, d=5, $fn=6);
+            cylinder(h=text_height, d=2.4);
+            for (a = [0, 60, 120])
+                rotate(a)
+                    translate([-2.1, -0.35, 0])
+                        cube([4.2, 0.7, text_height]);
+        }
+        // side view: hex body with the narrower crown, slots cut into its top
+        translate([4, -2.5, 0])
+            cube([2.2, 5, text_height]);
+        difference() {
+            translate([6.2, -2.1, 0])
+                cube([2.2, 4.2, text_height]);
+            translate([7.2, -0.4, 0])
+                cube([1.2, 0.8, text_height]);
+        }
     }
 }
 
