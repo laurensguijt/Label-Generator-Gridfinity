@@ -52,7 +52,7 @@ Drive = "Phillips";  // [Hex socket, Phillips, Torx, Torx TR, Slotted]
 Tip   = "Machine";   // [Machine, Wood]
 
 /* [Nut (only used when Category is Nut)] */
-Nut_type = "Standard"; // [Standard, Square, Lock, Cap, Disc, Wing, Slide-in T-nut, Hammer]
+Nut_type = "Standard"; // [Standard, Tall, Square, Lock, Cap, Disc, Wing, Slide-in T-nut, Hammer]
 
 /* [Washer (only used when Category is Washer)] */
 Washer_type = "Standard"; // [Standard, Spring]
@@ -256,6 +256,7 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
 
     } else if (category == "Nut") {
         if      (type == "Standard")       standard_Nut(width, height);
+        else if (type == "Tall")           Tall_Nut(width, height);
         else if (type == "Square")         Square_Nut(width, height);
         else if (type == "Lock")           lock_Nut(width, height);
         else if (type == "Cap")            Cap_Nut(width, height);
@@ -314,6 +315,25 @@ module standard_Nut(width, height, vertical_offset = 2.5) {
         // side view
         translate([4, -2.5, 0])
             cube([2.8, 5, text_height]);
+    }
+}
+
+// Tall hex nut (DIN 6330 / ISO 4033): like the standard nut, drawn twice as high so it stands out
+module Tall_Nut(width, height, vertical_offset = 2.5) {
+    translate([-3.9, vertical_offset, height]) {
+        // top view
+        difference() {
+            cylinder(h=text_height, d=5, $fn=6);
+            cylinder(h=text_height, d=3);
+        }
+        // side view: hex body with the edges between its faces
+        difference() {
+            translate([4, -2.5, 0])
+                cube([5.6, 5, text_height]);
+            for (y = [-1.05, 0.65])
+                translate([4, y, 0])
+                    cube([5.6, 0.4, text_height]);
+        }
     }
 }
 
