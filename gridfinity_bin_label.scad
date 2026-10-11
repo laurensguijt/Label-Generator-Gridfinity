@@ -37,6 +37,9 @@ batch_label_data = [
     [["Washer", "Standard"], "M5", 0],
 ];
 
+// Adding a part? Add it to the matching dropdown below and run
+// "python3 tools/generate_gallery.py" to update the pictures in README.md.
+
 /* [Part customization] */
 // Pick the category here, then refine it in the matching section below
 Category = "Bolt"; // [Bolt, Nut, Washer, Standoff, Other]
