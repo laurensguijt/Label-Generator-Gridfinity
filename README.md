@@ -148,7 +148,7 @@ Every head with every drive and tip, 57 in total.
 
 |   |   |   |
 |:---:|:---:|:---:|
-| <img src="docs/gallery/washer_standard.png" alt="Standard" width="240"><br>Standard | <img src="docs/gallery/washer_spring.png" alt="Spring" width="240"><br>Spring |   |
+| <img src="docs/gallery/washer_standard.png" alt="Standard" width="240"><br>Standard | <img src="docs/gallery/washer_spring.png" alt="Spring" width="240"><br>Spring | <img src="docs/gallery/washer_spacer.png" alt="Spacer" width="240"><br>Spacer |
 
 ### Standoffs
 

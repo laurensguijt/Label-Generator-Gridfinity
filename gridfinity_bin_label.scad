@@ -44,7 +44,8 @@ batch_label_data = [
 // Pick the category here, then refine it in the matching section below
 Category = "Bolt"; // [Bolt, Nut, Washer, Standoff, Other]
 diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
-// Used for bolts, standoffs (body without the thread stud), wall anchors and heat set inserts
+// Used for bolts, standoffs (body without the thread stud), spacer washers (height),
+// wall anchors and heat set inserts
 hardware_length = 24;
 
 /* [Bolt (only used when Category is Bolt)] */
@@ -58,7 +59,8 @@ Tip   = "Machine";   // [Machine, Wood]
 Nut_type = "Standard"; // [Standard, Tall, Square, Lock, Castle, Cap, Eye, Disc, Wing, Slide-in T-nut, Hammer]
 
 /* [Washer (only used when Category is Washer)] */
-Washer_type = "Standard"; // [Standard, Spring]
+// Spacer uses hardware_length as its height
+Washer_type = "Standard"; // [Standard, Spring, Spacer]
 
 /* [Standoff (only used when Category is Standoff)] */
 // Hex spacers like the brass M3 ones for mainboards, male = thread stud
@@ -275,8 +277,10 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
     } else if (category == "Washer") {
         if      (type == "Standard") standard_washer(width, height);
         else if (type == "Spring")   spring_washer(width, height);
+        else if (type == "Spacer")   spacer_washer(hardware_length, height);
         else echo(str("WARNING: unknown washer type: ", type));
-        washer_text(diameter, height);
+        if (type == "Spacer") bolt_text(diameter, hardware_length, height);
+        else                  washer_text(diameter, height);
 
     } else if (category == "Standoff") {
         if (type == "Male-female" || type == "Female-female" || type == "Male-male")
@@ -595,6 +599,20 @@ module Standoff(type, hardware_length, height, vertical_offset = 2.5) {
         if (male_end)
             translate([body_x + display_length, -1, 0])
                 cube([stud_length, 2, text_height]);
+    }
+}
+
+// Spacer washer / spacer sleeve: a washer with a given height, the side view grows with it
+module spacer_washer(hardware_length, height, vertical_offset = 2.5) {
+    display_length = min(hardware_length, 20 * Y_units);
+    translate([-(display_length + 1.5)/2, vertical_offset, height]) {
+        // top view
+        difference() {
+            cylinder(h=text_height, d=5);
+            cylinder(h=text_height, d=3);
+        }
+        // side view, split like a bolt stem when it is too long for the label
+        drawBoltStem(hardware_length, text_height, [4, -2.5, 0], thickness=5);
     }
 }
 

@@ -40,6 +40,9 @@ BOLT_SIZE = ("M5", 16)
 NUT_SIZE = "M5"
 WASHER_SIZE = "M5"
 STANDOFF_SIZE = ("M3", 10)
+WASHER_SIZES = {
+    "Spacer": ("M5", 5),
+}
 OTHER_SIZES = {
     "Wall anchor": ("M6", 30),
     "Heat set insert": ("M3", 5),
@@ -155,16 +158,18 @@ def collect_sections():
     ))
 
     simple = [
-        ("Nuts", "Nut", "Nut_type", NUT_SIZE, None),
-        ("Washers", "Washer", "Washer_type", WASHER_SIZE, None),
-        ("Standoffs", "Standoff", "Standoff_type", STANDOFF_SIZE[0], STANDOFF_SIZE[1]),
+        ("Nuts", "Nut", "Nut_type", NUT_SIZE, None, {}),
+        ("Washers", "Washer", "Washer_type", WASHER_SIZE, None, WASHER_SIZES),
+        ("Standoffs", "Standoff", "Standoff_type", STANDOFF_SIZE[0], STANDOFF_SIZE[1], {}),
     ]
-    for heading, category, variable, diameter, length in simple:
+    for heading, category, variable, diameter, length, sizes in simple:
         pictures = []
         for option in dropdown(variable):
             params = {"Category": category, variable: option, "diameter": diameter}
             if length is not None:
                 params["hardware_length"] = length
+            if option in sizes:
+                params["diameter"], params["hardware_length"] = sizes[option]
             pictures.append(Picture(f"{slug(category, option)}.png", option, params))
         sections.append((heading, "", pictures, []))
 
