@@ -52,7 +52,7 @@ Drive = "Phillips";  // [Hex socket, Phillips, Torx, Torx TR, Slotted]
 Tip   = "Machine";   // [Machine, Wood]
 
 /* [Nut (only used when Category is Nut)] */
-Nut_type = "Standard"; // [Standard, Tall, Square, Lock, Castle, Cap, Disc, Wing, Slide-in T-nut, Hammer]
+Nut_type = "Standard"; // [Standard, Tall, Square, Lock, Castle, Cap, Eye, Disc, Wing, Slide-in T-nut, Hammer]
 
 /* [Washer (only used when Category is Washer)] */
 Washer_type = "Standard"; // [Standard, Spring]
@@ -261,6 +261,7 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
         else if (type == "Lock")           lock_Nut(width, height);
         else if (type == "Castle")         Castle_Nut(width, height);
         else if (type == "Cap")            Cap_Nut(width, height);
+        else if (type == "Eye")            Eye_Nut(width, height);
         else if (type == "Disc")           Disc_Nut(width, height);
         else if (type == "Wing")           Wing_Nut(width, height);
         else if (type == "Slide-in T-nut") Slide_in_T_Nut(width, height);
@@ -414,6 +415,32 @@ module Cap_Nut(width, height, vertical_offset = 2.5) {
                     cube([2, 4, text_height]);
             }
     }
+}
+
+// Eye nut / ring nut (DIN 582): lifting eye on a round collar with threaded hole
+module Eye_Nut(width, height, vertical_offset = 2.5) {
+    translate([-4, vertical_offset, height])
+        linear_extrude(height=text_height) {
+            // top view: round collar with the eye seen edge-on across it
+            difference() {
+                circle(d=5);
+                circle(d=3.8);
+            }
+            translate([-0.6, -2.5])
+                square([1.2, 5]);
+            // side view: collar tapering into the eye
+            hull() {
+                translate([4, -2])
+                    square([1.2, 4]);
+                translate([5.2, -1])
+                    square([1, 2]);
+            }
+            translate([8.2, 0])
+                difference() {
+                    circle(d=5);
+                    circle(d=2.8);
+                }
+        }
 }
 
 // Disc nut: hex nut captive on a large round washer
