@@ -1,0 +1,68 @@
+name: Parts gallery
+
+# Renders a picture of every supported part with tools/generate_gallery.py.
+# - Pull requests: render the pictures as a check and attach them as an artifact.
+# - Push to main: render the pictures and commit the updated gallery and README.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - gridfinity_bin_label.scad
+      - tools/generate_gallery.py
+      - .github/workflows/gallery.yml
+  pull_request:
+    paths:
+      - gridfinity_bin_label.scad
+      - tools/generate_gallery.py
+      - .github/workflows/gallery.yml
+  workflow_dispatch:
+
+concurrency:
+  group: gallery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gallery:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # The nightly build has the manifold backend and renders the colors.
+      - name: Install OpenSCAD nightly
+        run: |
+          wget -qO- https://files.openscad.org/OBS-Repository-Key.pub \
+            | sudo tee /etc/apt/trusted.gpg.d/obs-openscad-nightly.asc > /dev/null
+          echo "deb https://download.opensuse.org/repositories/home:/t-paul/xUbuntu_24.04/ ./" \
+            | sudo tee /etc/apt/sources.list.d/openscad.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq openscad-nightly xvfb fonts-noto-core fonts-noto-cjk
+          openscad-nightly --version
+
+      - name: Render gallery
+        env:
+          OPENSCAD: openscad-nightly
+        run: xvfb-run -a python3 tools/generate_gallery.py
+
+      - name: Upload pictures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gallery
+          path: docs/gallery/
+          if-no-files-found: ignore
+
+      - name: Commit updated gallery
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/gallery
+          if git diff --cached --quiet; then
+            echo "Gallery is up to date"
+          else
+            git commit -m "Update parts gallery"
+            git push
+          fi
