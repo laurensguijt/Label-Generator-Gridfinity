@@ -35,9 +35,10 @@ batch_label_data = [
 
 
 /* [Part customization] */
-Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Wall Anchor, Torx wood screw, Torx panhead wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt, None, Custom Text]
+Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Wall Anchor, Torx wood screw, Torx panhead wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt, Wooden dowel, Expansion sleeve, Cam lock nut, Cam lock bolt, None, Custom Text]
 diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
-hardware_length = 24;
+// Hardware length in mm, in 0.1 steps
+hardware_length = 24; // [0:0.1:150]
 
 /* [Label customization] */
 Y_units       = 1;          // [1,2,3]
@@ -53,6 +54,8 @@ Font_Style = "Bold"; // [Regular,Black,Bold,ExtraBol,ExtraLight,Light,Medium,Sem
 text_type  = "Raised Text";                  // [Raised Text, Flush Text]
 //Font size
 text_size  = 4.2;
+// Raised Text Height, also sets how far the icons stand off the label
+raised_text_height = 0.2; // [0.05:0.05:1]
 // Custom text, first line (only used when Component is set to "Custom Text")
 custom_text = "Custom";
 // Custom text, second line (leave empty to show the first line full size and centered)
@@ -75,7 +78,7 @@ $fa      = 5;
 /* [Hidden] */
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
-text_height = (text_type == "Raised Text") ? 0.2 : 0.01;
+text_height = (text_type == "Raised Text") ? raised_text_height : 0.01;
 
 
 //////////////////////////////////////////////////////////////
@@ -240,6 +243,22 @@ module choose_Part_version(Part_version, hardware_length, width, height, diamete
 
     } else if (Part_version == "Torx panhead wood screw") {
         Torx_Panhead_Wood_Screw(hardware_length, width, height);
+        bolt_text(diameter, hardware_length, height);
+
+    } else if (Part_version == "Wooden dowel") {
+        Wooden_Dowel(hardware_length, width, height);
+        bolt_text(diameter, hardware_length, height);
+
+    } else if (Part_version == "Expansion sleeve") {
+        Expansion_Sleeve(hardware_length, width, height);
+        bolt_text(diameter, hardware_length, height);
+
+    } else if (Part_version == "Cam lock nut") {
+        cam_lock_Nut(width, height);
+        bolt_text(diameter, hardware_length, height);
+
+    } else if (Part_version == "Cam lock bolt") {
+        Cam_Lock_Bolt(hardware_length, width, height);
         bolt_text(diameter, hardware_length, height);
     }
 }
@@ -699,6 +718,159 @@ module Torx_Panhead_Wood_Screw(hardware_length, width, height, vertical_offset =
         }
     }
 }
+
+//////////////////////////////////////////////////////////////
+//        FURNITURE HARDWARE (Top View + Side View)        //
+//////////////////////////////////////////////////////////////
+
+// 45 degree corner cuts for one end of a plain bar.
+// dir = 1 chamfers the left end, dir = -1 the right end.
+module bar_end_chamfer(x, half_height, size, dir = 1) {
+    linear_extrude(height = text_height) {
+        polygon(points = [[x,  half_height], [x + dir*size,  half_height], [x,  half_height - size]]);
+        polygon(points = [[x, -half_height], [x + dir*size, -half_height], [x, -half_height + size]]);
+    }
+}
+
+// Wooden dowel: round face plus a fluted body with chamfered ends
+module Wooden_Dowel(hardware_length, width, height, vertical_offset = 2.5) {
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    // Same clamping as drawBoltStem, so the chamfers and flutes stay on the body
+    maxLen    = 20 * Y_units;
+    finalLen  = (hardware_length > maxLen) ? maxLen : hardware_length;
+    bodyStart = [4, -2, 0];
+    bodyEnd   = bodyStart[0] + finalLen;
+    fluteLen  = (finalLen > 3) ? finalLen - 2 : 0;
+
+    translate([-display_length/2 - 2, vertical_offset, height]) {
+        // top view (round face with its chamfered edge)
+        difference() {
+            cylinder(h=text_height, d=5);
+            difference() {
+                cylinder(h=text_height, d=4.4);
+                cylinder(h=text_height, d=3.6);
+            }
+        }
+
+        // side view
+        difference() {
+            drawBoltStem(hardware_length, text_height, bodyStart, thickness=4);
+
+            // chamfered ends
+            bar_end_chamfer(bodyStart[0], 2, 0.7,  1);
+            bar_end_chamfer(bodyEnd,      2, 0.7, -1);
+
+            // glue flutes running along the dowel
+            if (fluteLen > 0) {
+                translate([bodyStart[0] + 1,  0.6, 0])
+                    cube([fluteLen, 0.4, text_height]);
+                translate([bodyStart[0] + 1, -1.0, 0])
+                    cube([fluteLen, 0.4, text_height]);
+            }
+        }
+    }
+}
+
+// Expansion sleeve: hollow sleeve with a collar and a split expansion end
+module Expansion_Sleeve(hardware_length, width, height, vertical_offset = 2.5) {
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    maxLen    = 20 * Y_units;
+    finalLen  = (hardware_length > maxLen) ? maxLen : hardware_length;
+    bodyStart = [4, -2, 0];
+    bodyEnd   = bodyStart[0] + finalLen;
+    slotStart = bodyStart[0] + finalLen * 0.4;
+
+    translate([-display_length/2 - 2, vertical_offset, height]) {
+        // top view (open end of the sleeve)
+        difference() {
+            cylinder(h=text_height, d=5);
+            cylinder(h=text_height, d=2.6);
+        }
+
+        difference() {
+            union() {
+                // collar
+                translate([3, -2.5, 0])
+                    cube([1.2, 5, text_height]);
+                // sleeve body
+                drawBoltStem(hardware_length, text_height, bodyStart, thickness=4);
+            }
+
+            // slot the sleeve expands along
+            translate([slotStart, -0.5, 0])
+                cube([bodyEnd - slotStart, 1, text_height]);
+
+            // chamfered free end
+            bar_end_chamfer(bodyEnd, 2, 0.7, -1);
+        }
+    }
+}
+
+// Cam lock nut (cam / eccentric): drive face plus a side view showing the
+// keyhole the connecting bolt hooks into. The housing is drawn at a fixed
+// size, the length only shows up in the text.
+module cam_lock_Nut(width, height, vertical_offset = 2.5) {
+    translate([-3, vertical_offset, height]) {
+        // top view
+        difference() {
+            cylinder(h=text_height, d=5);
+            // phillips drive recess
+            translate([-0.5, -2, 0])
+                cube([1, 4, text_height]);
+            translate([-2, -0.5, 0])
+                cube([4, 1, text_height]);
+        }
+        // side view
+        translate([4, -2.5, 0]) {
+            difference() {
+                cube([4, 5, text_height]);
+                // seat for the bolt head plus the slot it slides in through
+                translate([2, 2.5, 0])
+                    cylinder(h=text_height, d=2.4);
+                translate([1.4, 0, 0])
+                    cube([1.2, 2.5, text_height]);
+            }
+        }
+    }
+}
+
+// Cam lock bolt (connecting bolt): mushroom head, neck and collar plus the
+// shank that screws into the panel
+module Cam_Lock_Bolt(hardware_length, width, height, vertical_offset = 2.5) {
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    translate([-display_length/2 - 2, vertical_offset, height]) {
+        // top view (phillips drive recess in the head)
+        difference() {
+            cylinder(h=text_height, d=5);
+            translate([-0.5, -2, 0])
+                cube([1, 4, text_height]);
+            translate([-2, -0.5, 0])
+                cube([4, 1, text_height]);
+        }
+
+        // side view: mushroom head that hooks into the cam
+        translate([5.5, 0, 0]) {
+            difference() {
+                cylinder(h=text_height, d=5);
+                translate([0, -2.5, 0])
+                    cube([4, 5, text_height]);
+            }
+        }
+        // neck
+        translate([5.5, -0.9, 0])
+            cube([1.2, 1.8, text_height]);
+        // collar
+        translate([6.7, -2.2, 0])
+            cube([1, 4.4, text_height]);
+
+        // shank
+        drawBoltStem(hardware_length, text_height, [7.7, -1.25, 0]);
+    }
+}
+
 
 //////////////////////////////////////////////////////////////
 //                       TEXT MODULES                      //

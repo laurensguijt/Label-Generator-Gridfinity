@@ -20,6 +20,7 @@ The current version includes support for:
 - **Nuts**
 - **Washers**
 - **Threaded Inserts**
+- **Furniture Hardware** (wooden dowels, expansion sleeves, cam lock nuts and bolts)
 
 New parts are regularly added to the library. Contributions are welcome!
 
