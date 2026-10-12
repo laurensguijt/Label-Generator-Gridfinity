@@ -6,38 +6,75 @@
 //                   BATCH LABEL DATA                      //
 //////////////////////////////////////////////////////////////
 
+// Each entry is [part, diameter, length]. The part is a list of the dropdown
+// values below: [category, type] for nuts, washers, standoffs and others, and
+// [category, head, drive, tip] for bolts (drive and tip are optional).
+// The old component names like "Dome head bolt" still work as well.
 batch_label_data = [
-    ["Dome head bolt", "M2", 8],
-    ["Dome head bolt", "M2", 12],
-    ["Dome head bolt", "M2", 16],
-    ["Dome head bolt", "M2", 20],
-    ["Dome head bolt", "M3", 8],
-    ["Dome head bolt", "M3", 12],
-    ["Dome head bolt", "M3", 16],
-    ["Dome head bolt", "M3", 20],
-    ["Dome head bolt", "M4", 8],
-    ["Dome head bolt", "M4", 12],
-    ["Dome head bolt", "M4", 16],
-    ["Dome head bolt", "M4", 20],
-    ["Dome head bolt", "M5", 8],
-    ["Dome head bolt", "M5", 12],
-    ["Dome head bolt", "M5", 16],
-    ["Dome head bolt", "M5", 20],
-    ["Standard nut", "M2", 0],
-    ["Standard nut", "M3", 0],
-    ["Standard nut", "M4", 0],
-    ["Standard nut", "M5", 0],
-    ["Standard washer", "M2", 0],
-    ["Standard washer", "M3", 0],
-    ["Standard washer", "M4", 0],
-    ["Standard washer", "M5", 0],
+    [["Bolt", "Pan head", "Hex socket"], "M2", 8],
+    [["Bolt", "Pan head", "Hex socket"], "M2", 12],
+    [["Bolt", "Pan head", "Hex socket"], "M2", 16],
+    [["Bolt", "Pan head", "Hex socket"], "M2", 20],
+    [["Bolt", "Pan head", "Hex socket"], "M3", 8],
+    [["Bolt", "Pan head", "Hex socket"], "M3", 12],
+    [["Bolt", "Pan head", "Hex socket"], "M3", 16],
+    [["Bolt", "Pan head", "Hex socket"], "M3", 20],
+    [["Bolt", "Pan head", "Hex socket"], "M4", 8],
+    [["Bolt", "Pan head", "Hex socket"], "M4", 12],
+    [["Bolt", "Pan head", "Hex socket"], "M4", 16],
+    [["Bolt", "Pan head", "Hex socket"], "M4", 20],
+    [["Bolt", "Pan head", "Hex socket"], "M5", 8],
+    [["Bolt", "Pan head", "Hex socket"], "M5", 12],
+    [["Bolt", "Pan head", "Hex socket"], "M5", 16],
+    [["Bolt", "Pan head", "Hex socket"], "M5", 20],
+    [["Nut", "Standard"], "M2", 0],
+    [["Nut", "Standard"], "M3", 0],
+    [["Nut", "Standard"], "M4", 0],
+    [["Nut", "Standard"], "M5", 0],
+    [["Washer", "Standard"], "M2", 0],
+    [["Washer", "Standard"], "M3", 0],
+    [["Washer", "Standard"], "M4", 0],
+    [["Washer", "Standard"], "M5", 0],
 ];
 
+// Adding a part? Add it to the matching dropdown below and run
+// "python3 tools/generate_gallery.py" to update the pictures in README.md.
 
 /* [Part customization] */
-Component = "phillips head bolt"; // [phillips head bolt, phillips wood screw, Wall Anchor, Torx wood screw, Torx panhead wood screw, Phillips head countersunk, Socket head bolt, Hex head bolt, Dome head bolt, Flat Head countersunk, Standard washer, Spring washer, Standard nut, Lock nut, Heat set inserts, Torx head bolt, Countersunk Torx head bolt, None, Custom Text]
+// Pick the category here, then refine it in the matching section below
+Category = "Bolt"; // [Bolt, Nut, Washer, Standoff, Furniture, Other]
 diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
-hardware_length = 24;
+// Used for bolts, standoffs (body without the thread stud), spacer washers (height),
+// wall anchors, heat set inserts and furniture hardware. In mm, in 0.1 steps
+hardware_length = 24; // [0:0.1:150]
+
+/* [Bolt (only used when Category is Bolt)] */
+Head  = "Pan head";  // [Socket head, Pan head, Mushroom head, Flat head, Countersunk, Hex head, Grub screw]
+// Ignored for hex head bolts
+Drive = "Phillips";  // [Hex socket, Phillips, Torx, Torx TR, Slotted]
+// Wood adds a pointed tip, ignored for grub screws
+Tip   = "Machine";   // [Machine, Wood]
+
+/* [Nut (only used when Category is Nut)] */
+Nut_type = "Standard"; // [Standard, Tall, Square, Lock, Castle, Cap, Eye, Disc, Wing, Slide-in T-nut, Hammer]
+
+/* [Washer (only used when Category is Washer)] */
+// Spacer uses hardware_length as its height
+Washer_type = "Standard"; // [Standard, Spring, Spacer]
+
+/* [Standoff (only used when Category is Standoff)] */
+// Hex spacers like the brass M3 ones for mainboards, male = thread stud
+Standoff_type = "Male-female"; // [Male-female, Female-female, Male-male]
+
+/* [Furniture (only used when Category is Furniture)] */
+Furniture_type = "Wooden dowel"; // [Wooden dowel, Expansion sleeve, Cam lock nut, Cam lock bolt]
+
+/* [Other (only used when Category is Other)] */
+Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Custom text, None]
+// Custom text, first line (only used when Other type is set to "Custom text")
+custom_text = "Custom";
+// Custom text, second line (leave empty to show the first line full size and centered)
+custom_text_line2 = "";
 
 /* [Label customization] */
 Y_units       = 1;          // [1,2,3]
@@ -53,10 +90,8 @@ Font_Style = "Bold"; // [Regular,Black,Bold,ExtraBol,ExtraLight,Light,Medium,Sem
 text_type  = "Raised Text";                  // [Raised Text, Flush Text]
 //Font size
 text_size  = 4.2;
-// Custom text, first line (only used when Component is set to "Custom Text")
-custom_text = "Custom";
-// Custom text, second line (leave empty to show the first line full size and centered)
-custom_text_line2 = "";
+// Raised Text Height, also sets how far the icons stand off the label
+raised_text_height = 0.2; // [0.05:0.05:1]
 
 /* [Batch exporter] */
 // Enable this feature if you want generate a lot of different labels at once.
@@ -72,10 +107,25 @@ champfer = 0.2;
 $fs      = 0.1;
 $fa      = 5;
 
+/* [Legacy] */
+// Old single dropdown name (e.g. "Dome head bolt"). Leave empty to use the
+// dropdowns above. Kept so presets saved with older versions keep working.
+Component = "";
+
 /* [Hidden] */
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
-text_height = (text_type == "Raised Text") ? 0.2 : 0.01;
+text_height = (text_type == "Raised Text") ? raised_text_height : 0.01;
+
+selected_part =
+    (Category == "Bolt")   ? ["Bolt", Head, Drive, Tip] :
+    (Category == "Nut")    ? ["Nut", Nut_type] :
+    (Category == "Washer") ? ["Washer", Washer_type] :
+    (Category == "Standoff") ? ["Standoff", Standoff_type] :
+    (Category == "Furniture") ? ["Furniture", Furniture_type] :
+    ["Other", Other_type];
+
+part = (Component == "") ? selected_part : resolve_part(Component);
 
 
 //////////////////////////////////////////////////////////////
@@ -90,7 +140,7 @@ if (batch_export) {
         height          = height,
         radius          = radius,
         champfer        = champfer,
-        Component       = Component,
+        part            = part,
         diameter        = diameter,
         hardware_length = hardware_length
     );
@@ -104,6 +154,58 @@ function getDimensions(Y_units) =
     (Y_units == 2) ? 77.8 :
     (Y_units == 3) ? 119.8 :
     0;
+
+
+//////////////////////////////////////////////////////////////
+//          PART LOOKUP (incl. old component names)        //
+//////////////////////////////////////////////////////////////
+// Old single dropdown names mapped to [category, ...] parts
+// (a function, so it can be used by the assignments above it)
+function legacy_components() = [
+    ["Socket head bolt",           ["Bolt", "Socket head", "Hex socket", "Machine"]],
+    ["Torx head bolt",             ["Bolt", "Socket head", "Torx",       "Machine"]],
+    ["Dome head bolt",             ["Bolt", "Pan head",    "Hex socket", "Machine"]],
+    ["phillips head bolt",         ["Bolt", "Pan head",    "Phillips",   "Machine"]],
+    ["Torx pan head bolt",         ["Bolt", "Pan head",    "Torx",       "Machine"]],
+    ["Flat Head countersunk",      ["Bolt", "Countersunk", "Hex socket", "Machine"]],
+    ["Phillips head countersunk",  ["Bolt", "Countersunk", "Phillips",   "Machine"]],
+    ["Countersunk Torx head bolt", ["Bolt", "Countersunk", "Torx",       "Machine"]],
+    ["Hex head bolt",              ["Bolt", "Hex head",    "Hex socket", "Machine"]],
+    ["Grub screw",                 ["Bolt", "Grub screw",  "Hex socket", "Machine"]],
+    ["phillips wood screw",        ["Bolt", "Countersunk", "Phillips",   "Wood"]],
+    ["Torx wood screw",            ["Bolt", "Countersunk", "Torx",       "Wood"]],
+    ["Torx panhead wood screw",    ["Bolt", "Pan head",    "Torx",       "Wood"]],
+    ["Standard nut",               ["Nut", "Standard"]],
+    ["Square nut",                 ["Nut", "Square"]],
+    ["Lock nut",                   ["Nut", "Lock"]],
+    ["Cap nut",                    ["Nut", "Cap"]],
+    ["Disc nut",                   ["Nut", "Disc"]],
+    ["Wing nut",                   ["Nut", "Wing"]],
+    ["Slide-in T-nut",             ["Nut", "Slide-in T-nut"]],
+    ["Hammer nut",                 ["Nut", "Hammer"]],
+    ["Standard washer",            ["Washer", "Standard"]],
+    ["Spring washer",              ["Washer", "Spring"]],
+    ["Wall Anchor",                ["Other", "Wall anchor"]],
+    ["Heat set inserts",           ["Other", "Heat set insert"]],
+    ["Wooden dowel",               ["Furniture", "Wooden dowel"]],
+    ["Expansion sleeve",           ["Furniture", "Expansion sleeve"]],
+    ["Cam lock nut",               ["Furniture", "Cam lock nut"]],
+    ["Cam lock bolt",              ["Furniture", "Cam lock bolt"]],
+    ["Custom Text",                ["Other", "Custom text"]],
+    ["None",                       ["Other", "None"]],
+];
+
+// Accepts a part list like ["Bolt", "Pan head", "Torx"] or an old component name
+function resolve_part(p) =
+    is_list(p)
+        ? ((p[0] == "Bolt")
+            ? ["Bolt", p[1], len(p) > 2 ? p[2] : "Hex socket", len(p) > 3 ? p[3] : "Machine"]
+            : p)
+        : legacy_part(p);
+
+function legacy_part(name) =
+    let (i = search([name], legacy_components())[0])
+    (i == []) ? ["Unknown", name] : legacy_components()[i][1];
 
 
 //////////////////////////////////////////////////////////////
@@ -127,7 +229,7 @@ module generate_multiple_labels() {
                 height          = height,
                 radius          = radius,
                 champfer        = champfer,
-                Component       = label_parameters[0],
+                part            = resolve_part(label_parameters[0]),
                 diameter        = label_parameters[1],
                 hardware_length = label_parameters[2]
             );
@@ -139,7 +241,7 @@ module generate_multiple_labels() {
 //////////////////////////////////////////////////////////////
 //         MAIN LABEL MODULE (base + icons/text)           //
 //////////////////////////////////////////////////////////////
-module label(length, width, height, radius, champfer, Component, diameter, hardware_length) {
+module label(length, width, height, radius, champfer, part, diameter, hardware_length) {
     color(Label_color) {
         difference() {
             labelbase(length, width, height, radius, champfer);
@@ -153,7 +255,7 @@ module label(length, width, height, radius, champfer, Component, diameter, hardw
         }
     }
     color(Content_color) {
-        choose_Part_version(Component, hardware_length, width, height, diameter);
+        choose_Part_version(part, hardware_length, width, height, diameter);
     }
 }
 
@@ -161,86 +263,70 @@ module label(length, width, height, radius, champfer, Component, diameter, hardw
 //////////////////////////////////////////////////////////////
 //           DISPATCH: Which Part Icon to Draw?            //
 //////////////////////////////////////////////////////////////
-module choose_Part_version(Part_version, hardware_length, width, height, diameter) {
-    if (Part_version == "None") {
-        // Don't draw any icon, just show the text
-        translate([0, 0, height])
-            linear_extrude(height=text_height)
-                text(str(diameter, "x", hardware_length),
-                     size   = text_size,
-                     font   = Font,
-                     valign = "center",
-                     halign = "center");
-    } else if (Part_version == "Custom Text") {
-        // Show only custom text (one or two lines)
-        custom_text_lines(custom_text, custom_text_line2, height);
-    } else if (Part_version == "Socket head bolt") {
-        Socket_head(hardware_length, width, height);
+module choose_Part_version(part, hardware_length, width, height, diameter) {
+    category = part[0];
+    type     = part[1];
+
+    if (category == "Bolt") {
+        Bolt(part[1], part[2], part[3], hardware_length, height);
         bolt_text(diameter, hardware_length, height);
 
-    } else if (Part_version == "Torx head bolt") {
-        Torx_head(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Countersunk Torx head bolt") {
-        Countersunk_Torx_head(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Hex head bolt") {
-        Hex_head(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Flat Head countersunk") {
-        Countersunk_socket_head(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Dome head bolt") {
-        Dome_head(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "phillips head bolt") {
-        Phillips_head(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Phillips head countersunk") {
-        Phillips_head_countersunk(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Standard washer") {
-        standard_washer(width, height);
-        washer_text(diameter, height);
-
-    } else if (Part_version == "Spring washer") {
-        spring_washer(width, height);
-        washer_text(diameter, height);
-
-    } else if (Part_version == "Standard nut") {
-        standard_Nut(width, height);
+    } else if (category == "Nut") {
+        if      (type == "Standard")       standard_Nut(width, height);
+        else if (type == "Tall")           Tall_Nut(width, height);
+        else if (type == "Square")         Square_Nut(width, height);
+        else if (type == "Lock")           lock_Nut(width, height);
+        else if (type == "Castle")         Castle_Nut(width, height);
+        else if (type == "Cap")            Cap_Nut(width, height);
+        else if (type == "Eye")            Eye_Nut(width, height);
+        else if (type == "Disc")           Disc_Nut(width, height);
+        else if (type == "Wing")           Wing_Nut(width, height);
+        else if (type == "Slide-in T-nut") Slide_in_T_Nut(width, height);
+        else if (type == "Hammer")         Hammer_Nut(width, height);
+        else echo(str("WARNING: unknown nut type: ", type));
         nut_text(diameter, height);
 
-    } else if (Part_version == "Lock nut") {
-        lock_Nut(width, height);
-        nut_text(diameter, height);
+    } else if (category == "Washer") {
+        if      (type == "Standard") standard_washer(width, height);
+        else if (type == "Spring")   spring_washer(width, height);
+        else if (type == "Spacer")   spacer_washer(hardware_length, height);
+        else echo(str("WARNING: unknown washer type: ", type));
+        if (type == "Spacer") bolt_text(diameter, hardware_length, height);
+        else                  washer_text(diameter, height);
 
-    } else if (Part_version == "Heat set inserts") {
-        Heat_Set_Inserts(hardware_length, width, height);
+    } else if (category == "Standoff") {
+        if (type == "Male-female" || type == "Female-female" || type == "Male-male")
+            Standoff(type, hardware_length, height);
+        else echo(str("WARNING: unknown standoff type: ", type));
         bolt_text(diameter, hardware_length, height);
 
-    } else if (Part_version == "Wall Anchor") {
-        Wall_Anchor(hardware_length, width, height);
+    } else if (category == "Other") {
+        if (type == "Wall anchor") {
+            Wall_Anchor(hardware_length, width, height);
+            bolt_text(diameter, hardware_length, height);
+        } else if (type == "Heat set insert") {
+            Heat_Set_Inserts(hardware_length, width, height);
+            bolt_text(diameter, hardware_length, height);
+        } else if (type == "Custom text") {
+            // Show only custom text (one or two lines)
+            custom_text_lines(custom_text, custom_text_line2, height);
+        } else if (type == "None") {
+            // Don't draw any icon, just show the text
+            centered_text(str(diameter, "x", hardware_length), height);
+        } else {
+            echo(str("WARNING: unknown other type: ", type));
+        }
+
+    } else if (category == "Furniture") {
+        if      (type == "Wooden dowel")     Wooden_Dowel(hardware_length, width, height);
+        else if (type == "Expansion sleeve") Expansion_Sleeve(hardware_length, width, height);
+        else if (type == "Cam lock nut")     cam_lock_Nut(width, height);
+        else if (type == "Cam lock bolt")    Cam_Lock_Bolt(hardware_length, width, height);
+        else echo(str("WARNING: unknown furniture type: ", type));
         bolt_text(diameter, hardware_length, height);
 
-    } else if (Part_version == "phillips wood screw") {
-        Phillips_Wood_Screw(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Torx wood screw") {
-        Torx_Wood_Screw(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (Part_version == "Torx panhead wood screw") {
-        Torx_Panhead_Wood_Screw(hardware_length, width, height);
-        bolt_text(diameter, hardware_length, height);
+    } else {
+        echo(str("WARNING: unknown component: ", type));
     }
 }
 
@@ -261,6 +347,40 @@ module standard_Nut(width, height, vertical_offset = 2.5) {
     }
 }
 
+// Tall hex nut (DIN 6330 / ISO 4033): like the standard nut, drawn twice as high so it stands out
+module Tall_Nut(width, height, vertical_offset = 2.5) {
+    translate([-3.9, vertical_offset, height]) {
+        // top view
+        difference() {
+            cylinder(h=text_height, d=5, $fn=6);
+            cylinder(h=text_height, d=3);
+        }
+        // side view: hex body with the edges between its faces
+        difference() {
+            translate([4, -2.5, 0])
+                cube([5.6, 5, text_height]);
+            for (y = [-1.05, 0.65])
+                translate([4, y, 0])
+                    cube([5.6, 0.4, text_height]);
+        }
+    }
+}
+
+// Square nut (DIN 557 / DIN 562)
+module Square_Nut(width, height, vertical_offset = 2.5) {
+    translate([-2.5, vertical_offset, height]) {
+        // top view: square body with threaded hole
+        difference() {
+            translate([-2.2, -2.2, 0])
+                cube([4.4, 4.4, text_height]);
+            cylinder(h=text_height, d=2.6);
+        }
+        // side view
+        translate([4, -2.2, 0])
+            cube([2.8, 4.4, text_height]);
+    }
+}
+
 module lock_Nut(width, height, vertical_offset = 2.5) {
     translate([-2.5, vertical_offset, height]) {
         // top view
@@ -274,6 +394,169 @@ module lock_Nut(width, height, vertical_offset = 2.5) {
 
         translate([4, -2, 0])
             cube([3.5, 4, text_height]);
+    }
+}
+
+// Castle nut / slotted nut (DIN 935): hex body with a slotted crown for a split pin
+module Castle_Nut(width, height, vertical_offset = 2.5) {
+    translate([-3.3, vertical_offset, height]) {
+        // top view: hex with threaded hole and the three slots across the crown
+        difference() {
+            cylinder(h=text_height, d=5, $fn=6);
+            cylinder(h=text_height, d=2.4);
+            for (a = [0, 60, 120])
+                rotate(a)
+                    translate([-2.1, -0.35, 0])
+                        cube([4.2, 0.7, text_height]);
+        }
+        // side view: hex body with the narrower crown, slots cut into its top
+        translate([4, -2.5, 0])
+            cube([2.2, 5, text_height]);
+        difference() {
+            translate([6.2, -2.1, 0])
+                cube([2.2, 4.2, text_height]);
+            translate([7.2, -0.4, 0])
+                cube([1.2, 0.8, text_height]);
+        }
+    }
+}
+
+// Cap nut / acorn nut (DIN 1587): hex body closed by a dome
+module Cap_Nut(width, height, vertical_offset = 2.5) {
+    translate([-2.5, vertical_offset, height]) {
+        // top view: closed hex with the outline of the dome
+        difference() {
+            cylinder(h=text_height, d=5, $fn=6);
+            difference() {
+                cylinder(h=text_height, d=3.8);
+                cylinder(h=text_height, d=2.8);
+            }
+        }
+        // side view: short hex body with the dome on top
+        translate([4, -2.5, 0])
+            cube([2.2, 5, text_height]);
+        translate([6.2, 0, 0])
+            intersection() {
+                cylinder(h=text_height, r=2);
+                translate([0, -2, 0])
+                    cube([2, 4, text_height]);
+            }
+    }
+}
+
+// Eye nut / ring nut (DIN 582): lifting eye on a round collar with threaded hole
+module Eye_Nut(width, height, vertical_offset = 2.5) {
+    translate([-4, vertical_offset, height])
+        linear_extrude(height=text_height) {
+            // top view: round collar with the eye seen edge-on across it
+            difference() {
+                circle(d=5);
+                circle(d=3.8);
+            }
+            translate([-0.6, -2.5])
+                square([1.2, 5]);
+            // side view: collar tapering into the eye
+            hull() {
+                translate([4, -2])
+                    square([1.2, 4]);
+                translate([5.2, -1])
+                    square([1, 2]);
+            }
+            translate([8.2, 0])
+                difference() {
+                    circle(d=5);
+                    circle(d=2.8);
+                }
+        }
+}
+
+// Disc nut: hex nut captive on a large round washer
+module Disc_Nut(width, height, vertical_offset = 2.5) {
+    translate([-3, vertical_offset, height]) {
+        // top view: hex nut with threaded hole, framed by the washer
+        difference() {
+            cylinder(h=text_height, d=5.6);
+            cylinder(h=text_height, d=4.8, $fn=6);
+        }
+        difference() {
+            cylinder(h=text_height, d=4, $fn=6);
+            cylinder(h=text_height, d=2.2);
+        }
+        // side view: thin washer with the hex body on top
+        translate([4, -2.8, 0])
+            cube([0.8, 5.6, text_height]);
+        translate([4.8, -2, 0])
+            cube([2.2, 4, text_height]);
+    }
+}
+
+// Wing nut (DIN 315): round hub with two wings for turning by hand
+module Wing_Nut(width, height, vertical_offset = 2.5) {
+    translate([-4.25, vertical_offset, height])
+        linear_extrude(height=text_height) {
+            // top view: hub with threaded hole, wings as a thin bar
+            difference() {
+                union() {
+                    circle(d=3.2);
+                    hull() {
+                        translate([-3, 0]) circle(r=0.5);
+                        translate([3, 0]) circle(r=0.5);
+                    }
+                }
+                circle(d=1.8);
+            }
+            // side view: tapered hub with both wings rising outwards
+            translate([8.5, 0]) {
+                polygon(points=[[-1.5, -2.5], [1.5, -2.5], [1.1, 0.3], [-1.1, 0.3]]);
+                for (side = [-1, 1])
+                    mirror([side < 0 ? 1 : 0, 0])
+                        hull() {
+                            translate([0.9, -2.2]) square([0.5, 1.5]);
+                            translate([2.8, 1.9]) circle(r=0.6);
+                        }
+            }
+        }
+}
+
+// Slide-in T-nut for aluminium profiles (inserted from the profile end)
+module Slide_in_T_Nut(width, height, vertical_offset = 2.5) {
+    translate([-4, vertical_offset, height]) {
+        // top view: rectangular block with threaded hole
+        difference() {
+            translate([-3.5, -2, 0])
+                cube([7, 4, text_height]);
+            cylinder(h=text_height, d=2.5);
+        }
+        // side view: T profile, flange at the bottom, neck into the slot
+        translate([5, -2.5, 0])
+            cube([6, 2, text_height]);
+        translate([6.75, -0.5, 0])
+            cube([2.5, 1.5, text_height]);
+    }
+}
+
+// Hammer nut for aluminium profiles (dropped into the slot, turned 90°)
+module Hammer_Nut(width, height, vertical_offset = 2.5) {
+    translate([-4, vertical_offset, height]) {
+        // top view: two opposite corners rounded so it can rotate in the slot
+        difference() {
+            hull() {
+                translate([1.5, 0, 0])
+                    cylinder(h=text_height, r=2);
+                translate([-1.5, 0, 0])
+                    cylinder(h=text_height, r=2);
+                translate([3, -2, 0])
+                    cube([0.5, 0.5, text_height]);
+                translate([-3.5, 1.5, 0])
+                    cube([0.5, 0.5, text_height]);
+            }
+            cylinder(h=text_height, d=2.5);
+        }
+        // side view: tapered body with neck on top
+        linear_extrude(height=text_height)
+            polygon(points=[[6.5, -2.5], [9.5, -2.5], [11, 0.5], [5, 0.5]]);
+        translate([6.75, 0.5, 0])
+            cube([2.5, 1.5, text_height]);
     }
 }
 
@@ -301,6 +584,55 @@ module spring_washer(width, height, vertical_offset = 2.5) {
         // side view
         translate([4, -2.5, 0])
             cube([1, 5, text_height]);
+    }
+}
+
+// Hex standoff / spacer (e.g. brass M3 for mainboards), male ends get a thread stud
+module Standoff(type, hardware_length, height, vertical_offset = 2.5) {
+    display_length = min(hardware_length, 20 * Y_units);
+    stud_length    = 2.5;
+    male_start     = (type == "Male-male");
+    male_end       = (type != "Female-female");
+    body_x         = 4 + (male_start ? stud_length : 0);
+    right_end      = body_x + display_length + (male_end ? stud_length : 0);
+
+    // center the icon between the left edge of the top view and the right end
+    translate([-(right_end - 2.5)/2, vertical_offset, height]) {
+        // top view: hexagon, with a hole or the stud seen from above
+        difference() {
+            cylinder(h=text_height, d=5, $fn=6);
+            cylinder(h=text_height, d=male_start ? 3.4 : 2.6);
+        }
+        if (male_start)
+            cylinder(h=text_height, d=2.4);
+
+        // side view: hex body with the edges between its faces
+        difference() {
+            drawBoltStem(hardware_length, text_height, [body_x, -2, 0], thickness=4);
+            for (y = [-1.05, 0.65])
+                translate([body_x, y, 0])
+                    cube([display_length, 0.4, text_height]);
+        }
+        if (male_start)
+            translate([body_x - stud_length, -1, 0])
+                cube([stud_length, 2, text_height]);
+        if (male_end)
+            translate([body_x + display_length, -1, 0])
+                cube([stud_length, 2, text_height]);
+    }
+}
+
+// Spacer washer / spacer sleeve: a washer with a given height, the side view grows with it
+module spacer_washer(hardware_length, height, vertical_offset = 2.5) {
+    display_length = min(hardware_length, 20 * Y_units);
+    translate([-(display_length + 1.5)/2, vertical_offset, height]) {
+        // top view
+        difference() {
+            cylinder(h=text_height, d=5);
+            cylinder(h=text_height, d=3);
+        }
+        // side view, split like a bolt stem when it is too long for the label
+        drawBoltStem(hardware_length, text_height, [4, -2.5, 0], thickness=5);
     }
 }
 
@@ -420,103 +752,86 @@ module Torx_star(points, point_len, height=2, rnd=0.1) {
 }
 
 
-// Torx head bolt
-module Torx_head(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
+// Bolts and screws, built from a head (side view), a drive (top view) and a tip
+module Bolt(head, drive, tip, hardware_length, height, vertical_offset = 2.5) {
+    display_length = min(hardware_length, 20 * Y_units);
     translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view
-        difference() {
-            cylinder(h=text_height, d=5);
-            Torx_star(6, 2, height=2, rnd=0.1);
-        }
-        // side view
-        translate([3, -2.5, 0])
-            cube([4, 5, text_height]);
+        bolt_top_view(head, drive);
 
-        // stem
-        drawBoltStem(hardware_length, text_height, [7, -1.25, 0]);
+        if (head == "Grub screw") {
+            // side view: full diameter threaded body with the drive at one end
+            difference() {
+                drawBoltStem(hardware_length, text_height, [4, -2, 0], thickness=4);
+                translate([4, -0.8, 0])
+                    cube([1.5, 1.6, text_height]);
+            }
+        } else {
+            stem_x = bolt_stem_start(head);
+            bolt_side_view(head);
+
+            if (tip == "Wood") {
+                // stem shortened by 1.5 for the tip, clamped like in drawBoltStem
+                stem_length = max(hardware_length - 1.5, 0);
+                drawBoltStem(stem_length, text_height, [stem_x, -1.25, 0]);
+                translate([stem_x + min(stem_length, 20 * Y_units), 0, 0])
+                    linear_extrude(height=text_height)
+                        polygon(points=[[0, 1.25], [2, 0], [0, -1.25]]);
+            } else {
+                drawBoltStem(hardware_length, text_height, [stem_x, -1.25, 0]);
+            }
+        }
     }
 }
 
-// Countersunk Torx
-module Countersunk_Torx_head(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view
-        difference() {
-            cylinder(h=text_height, d=5);
-            Torx_star(6, 2, height=2, rnd=0.1);
-        }
-        // countersunk side
-        translate([6.6, 0, 0])
-            cylinder(r=3, h=text_height, $fn=3);
+// Where the stem starts, right after the head's side view
+function bolt_stem_start(head) =
+    (head == "Socket head") ? 7 :
+    (head == "Countersunk") ? 5 :
+    6;
 
-        // stem
-        drawBoltStem(hardware_length, text_height, [7, -1.25, 0]);
-    }
-}
-
-// Socket head
-module Socket_head(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view
-        difference() {
-            cylinder(h=text_height, d=5);
-            cylinder(h=text_height, r=1.6, $fn=6);
-        }
-        // side view
-        translate([3, -2.5, 0])
-            cube([4, 5, text_height]);
-
-        // stem
-        drawBoltStem(hardware_length, text_height, [7, -1.25, 0]);
-    }
-}
-
-// Hex head
-module Hex_head(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view
+// Top view: round head with the drive recess, or a plain hexagon for hex heads
+module bolt_top_view(head, drive) {
+    if (head == "Hex head") {
         cylinder(h=text_height, d=5, $fn=6);
-        // side view
+    } else {
+        difference() {
+            cylinder(h=text_height, d=5);
+            drive_recess(drive);
+        }
+        // tamper resistant Torx: security pin in the middle of the star
+        if (drive == "Torx TR")
+            cylinder(h=text_height, d=1.2);
+    }
+}
+
+module drive_recess(drive) {
+    if (drive == "Phillips") {
+        translate([-0.5, -2, 0])
+            cube([1, 4, text_height]);
+        translate([-2, -0.5, 0])
+            cube([4, 1, text_height]);
+    } else if (drive == "Torx" || drive == "Torx TR") {
+        Torx_star(6, 2, height=2, rnd=0.1);
+    } else if (drive == "Slotted") {
+        translate([-0.5, -2, 0])
+            cube([1, 4, text_height]);
+    } else {
+        cylinder(h=text_height, r=1.6, $fn=6);
+    }
+}
+
+// Side view of the head
+module bolt_side_view(head) {
+    if (head == "Socket head") {
+        translate([3, -2.5, 0])
+            cube([4, 5, text_height]);
+    } else if (head == "Hex head") {
         translate([3, -2.5, 0])
             cube([3, 5, text_height]);
-
-        // stem
-        drawBoltStem(hardware_length, text_height, [6, -1.25, 0]);
-    }
-}
-
-// Countersunk socket head
-module Countersunk_socket_head(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view
-        difference() {
-            cylinder(h=text_height, d=5);
-            cylinder(h=text_height, r=1.6, $fn=6);
-        }
-        // countersunk side
+    } else if (head == "Countersunk") {
         translate([5, 0, 0])
             cylinder(r=3, h=text_height, $fn=3);
-
-        // stem
-        drawBoltStem(hardware_length, text_height, [5, -1.25, 0]);
-    }
-}
-
-// Dome head
-module Dome_head(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view
-        difference() {
-            cylinder(h=text_height, d=5);
-            cylinder(h=text_height, r=1.6, $fn=6);
-        }
-        // side view
+    } else if (head == "Pan head") {
         translate([6, 0, 0]) {
             difference() {
                 cylinder(h=text_height, d=5);
@@ -524,41 +839,154 @@ module Dome_head(hardware_length, width, height, vertical_offset = 2.5) {
                     cube([4, 5, text_height]);
             }
         }
-        // stem
-        drawBoltStem(hardware_length, text_height, [6, -1.25, 0]);
+    } else if (head == "Mushroom head") {
+        // flatter and wider dome than the pan head
+        translate([6, 0, 0]) {
+            difference() {
+                scale([0.55, 1.1, 1])
+                    cylinder(h=text_height, d=5);
+                translate([0, -3, 0])
+                    cube([4, 6, text_height]);
+            }
+        }
+    } else if (head == "Flat head") {
+        // low cylindrical head as wide as the mushroom head, flat top
+        translate([4.6, -2.75, 0])
+            linear_extrude(height=text_height)
+                hull() {
+                    translate([0.3, 0.3]) circle(r=0.3);
+                    translate([0.3, 5.2]) circle(r=0.3);
+                    translate([1, 0])     square([0.4, 5.5]);
+                }
+    } else {
+        echo(str("WARNING: unknown head: ", head));
     }
 }
 
-// Phillips head
-module Phillips_head(hardware_length, width, height, vertical_offset = 2.5) {
+//////////////////////////////////////////////////////////////
+//        FURNITURE HARDWARE (Top View + Side View)        //
+//////////////////////////////////////////////////////////////
+
+// 45 degree corner cuts for one end of a plain bar.
+// dir = 1 chamfers the left end, dir = -1 the right end.
+module bar_end_chamfer(x, half_height, size, dir = 1) {
+    linear_extrude(height = text_height) {
+        polygon(points = [[x,  half_height], [x + dir*size,  half_height], [x,  half_height - size]]);
+        polygon(points = [[x, -half_height], [x + dir*size, -half_height], [x, -half_height + size]]);
+    }
+}
+
+// Wooden dowel: round face plus a fluted body with chamfered ends
+module Wooden_Dowel(hardware_length, width, height, vertical_offset = 2.5) {
     display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    // Same clamping as drawBoltStem, so the chamfers and flutes stay on the body
+    maxLen    = 20 * Y_units;
+    finalLen  = (hardware_length > maxLen) ? maxLen : hardware_length;
+    bodyStart = [4, -2, 0];
+    bodyEnd   = bodyStart[0] + finalLen;
+    fluteLen  = (finalLen > 3) ? finalLen - 2 : 0;
+
     translate([-display_length/2 - 2, vertical_offset, height]) {
+        // top view (round face with its chamfered edge)
+        difference() {
+            cylinder(h=text_height, d=5);
+            difference() {
+                cylinder(h=text_height, d=4.4);
+                cylinder(h=text_height, d=3.6);
+            }
+        }
+
+        // side view
+        difference() {
+            drawBoltStem(hardware_length, text_height, bodyStart, thickness=4);
+
+            // chamfered ends
+            bar_end_chamfer(bodyStart[0], 2, 0.7,  1);
+            bar_end_chamfer(bodyEnd,      2, 0.7, -1);
+
+            // glue flutes running along the dowel
+            if (fluteLen > 0) {
+                translate([bodyStart[0] + 1,  0.6, 0])
+                    cube([fluteLen, 0.4, text_height]);
+                translate([bodyStart[0] + 1, -1.0, 0])
+                    cube([fluteLen, 0.4, text_height]);
+            }
+        }
+    }
+}
+
+// Expansion sleeve: hollow sleeve with a collar and a split expansion end
+module Expansion_Sleeve(hardware_length, width, height, vertical_offset = 2.5) {
+    display_length = (hardware_length > 20) ? 20 : hardware_length;
+
+    maxLen    = 20 * Y_units;
+    finalLen  = (hardware_length > maxLen) ? maxLen : hardware_length;
+    bodyStart = [4, -2, 0];
+    bodyEnd   = bodyStart[0] + finalLen;
+    slotStart = bodyStart[0] + finalLen * 0.4;
+
+    translate([-display_length/2 - 2, vertical_offset, height]) {
+        // top view (open end of the sleeve)
+        difference() {
+            cylinder(h=text_height, d=5);
+            cylinder(h=text_height, d=2.6);
+        }
+
+        difference() {
+            union() {
+                // collar
+                translate([3, -2.5, 0])
+                    cube([1.2, 5, text_height]);
+                // sleeve body
+                drawBoltStem(hardware_length, text_height, bodyStart, thickness=4);
+            }
+
+            // slot the sleeve expands along
+            translate([slotStart, -0.5, 0])
+                cube([bodyEnd - slotStart, 1, text_height]);
+
+            // chamfered free end
+            bar_end_chamfer(bodyEnd, 2, 0.7, -1);
+        }
+    }
+}
+
+// Cam lock nut (cam / eccentric): drive face plus a side view showing the
+// keyhole the connecting bolt hooks into. The housing is drawn at a fixed
+// size, the length only shows up in the text.
+module cam_lock_Nut(width, height, vertical_offset = 2.5) {
+    translate([-3, vertical_offset, height]) {
         // top view
         difference() {
             cylinder(h=text_height, d=5);
+            // phillips drive recess
             translate([-0.5, -2, 0])
                 cube([1, 4, text_height]);
             translate([-2, -0.5, 0])
                 cube([4, 1, text_height]);
         }
         // side view
-        translate([6, 0, 0]) {
+        translate([4, -2.5, 0]) {
             difference() {
-                cylinder(h=text_height, d=5);
-                translate([0, -2.5, 0])
-                    cube([4, 5, text_height]);
+                cube([4, 5, text_height]);
+                // seat for the bolt head plus the slot it slides in through
+                translate([2, 2.5, 0])
+                    cylinder(h=text_height, d=2.4);
+                translate([1.4, 0, 0])
+                    cube([1.2, 2.5, text_height]);
             }
         }
-        // stem
-        drawBoltStem(hardware_length, text_height, [6, -1.25, 0]);
     }
 }
 
-// Phillips countersunk
-module Phillips_head_countersunk(hardware_length, width, height, vertical_offset = 2.5) {
+// Cam lock bolt (connecting bolt): mushroom head, neck and collar plus the
+// shank that screws into the panel
+module Cam_Lock_Bolt(hardware_length, width, height, vertical_offset = 2.5) {
     display_length = (hardware_length > 20) ? 20 : hardware_length;
+
     translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view
+        // top view (phillips drive recess in the head)
         difference() {
             cylinder(h=text_height, d=5);
             translate([-0.5, -2, 0])
@@ -566,143 +994,41 @@ module Phillips_head_countersunk(hardware_length, width, height, vertical_offset
             translate([-2, -0.5, 0])
                 cube([4, 1, text_height]);
         }
-        // countersunk side
-        translate([5, 0, 0])
-            cylinder(r=3, h=text_height, $fn=3);
 
-        // stem
-        drawBoltStem(hardware_length, text_height, [5, -1.25, 0]);
-    }
-}
-
-
-//Philips wood screw
-module Phillips_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5) {
-    // We'll place everything in "real" X after we clamp a final stem length
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-
-    // The start of the main stem
-    stemStart = [5, -1.25, 0];
-
-    // We want to shorten the actual stem by 1.5 for the tip
-    // Then clamp it to the same maxLen logic used in drawBoltStem
-    maxLen    = 20 * Y_units;
-    rawStem   = hardware_length - 1.5;
-    finalStem = (rawStem > maxLen) ? maxLen : rawStem;
-
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // Head (top view)
-        difference() {
-            cylinder(h=text_height, d=5);
-            // Phillips "plus"
-            translate([-0.5, -2, 0]) cube([1, 4, text_height]);
-            translate([-2, -0.5, 0]) cube([4, 1, text_height]);
-        }
-
-        // Countersunk side
-        translate([5, 0, 0])
-            cylinder(r=3, h=text_height, $fn=3);
-
-        // Draw the stem with the same logic as drawBoltStem,
-        // but using finalStem (the "shortened" length).
-        // That means if rawStem is still bigger than maxLen,
-        // it will be split within the function as well.
-        drawBoltStem(rawStem, text_height, stemStart);
-
-        // Place the tip exactly at the end of the final stem, not the full hardware_length
-        translate([stemStart[0] + finalStem, 0, 0]) {
-            linear_extrude(height=text_height)
-                polygon(
-                    points = [[0, 1.25],[2, 0],[0, -1.25]],
-                    paths  = [[0, 1, 2]]
-                );
-        }
-    }
-}
-
-//Torx wood screw
-module Torx_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5) {
-    // We'll place everything in "real" X after we clamp a final stem length
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-
-    // The start of the main stem
-    stemStart = [5, -1.25, 0];
-
-    // We want to shorten the actual stem by 1.5 for the tip
-    // Then clamp it to the same maxLen logic used in drawBoltStem
-    maxLen    = 20 * Y_units;
-    rawStem   = hardware_length - 1.5;
-    finalStem = (rawStem > maxLen) ? maxLen : rawStem;
-
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view (torx head)
-        difference() {
-            cylinder(h=text_height, d=5);
-            Torx_star(6, 2, height=2, rnd=0.1);
-        }
-
-        // Countersunk side
-        translate([5, 0, 0])
-            cylinder(r=3, h=text_height, $fn=3);
-
-        // Main stem (shortened by 1.5). We pass 'rawStem' so drawBoltStem can do the split if needed.
-        drawBoltStem(rawStem, text_height, stemStart);
-
-        // Place tip exactly at the end of that final stem
-        translate([stemStart[0] + finalStem, 0, 0]) {
-            linear_extrude(height=text_height)
-                polygon(
-                    points = [[0,  1.25],[2, 0],[0, -1.25]],
-                    paths  = [[0, 1, 2]]
-                );
-        }
-    }
-}
-
-// Torx panhead wood screw
-module Torx_Panhead_Wood_Screw(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
-
-    // Start position of the stem (a bit further right than countersunk)
-    stemStart = [6, -1.25, 0];
-
-    // Shorten by 1.5 for the tip, clamp like drawBoltStem does
-    maxLen    = 20 * Y_units;
-    rawStem   = (hardware_length > 1.5) ? (hardware_length - 1.5) : 0;
-    finalStem = (rawStem > maxLen) ? maxLen : rawStem;
-
-    translate([-display_length/2 - 2, vertical_offset, height]) {
-        // top view (torx head)
-        difference() {
-            cylinder(h=text_height, d=5);
-            Torx_star(6, 2, height=2, rnd=0.1);
-        }
-
-        // side view (pan head profile)
-        translate([6, 0, 0]) {
+        // side view: mushroom head that hooks into the cam
+        translate([5.5, 0, 0]) {
             difference() {
                 cylinder(h=text_height, d=5);
-                translate([0, -2.5, 0]) cube([4, 5, text_height]);
+                translate([0, -2.5, 0])
+                    cube([4, 5, text_height]);
             }
         }
+        // neck
+        translate([5.5, -0.9, 0])
+            cube([1.2, 1.8, text_height]);
+        // collar
+        translate([6.7, -2.2, 0])
+            cube([1, 4.4, text_height]);
 
-        // stem (uses same split-logic if it gets too long)
-        drawBoltStem(rawStem, text_height, stemStart);
-
-        // tip at the end of the clamped stem
-        translate([stemStart[0] + finalStem, 0, 0]) {
-            linear_extrude(height=text_height)
-                polygon(
-                    points = [[0,  1.25],[2, 0],[0, -1.25]],
-                    paths  = [[0, 1, 2]]
-                );
-        }
+        // shank
+        drawBoltStem(hardware_length, text_height, [7.7, -1.25, 0]);
     }
 }
+
 
 //////////////////////////////////////////////////////////////
 //                       TEXT MODULES                      //
 //////////////////////////////////////////////////////////////
+module centered_text(content, height) {
+    translate([0, 0, height])
+        linear_extrude(height=text_height)
+            text(content,
+                 size   = text_size,
+                 font   = Font,
+                 valign = "center",
+                 halign = "center");
+}
+
 module bolt_text(diameter, Length, height) {
     translate([0, -3, height])
         linear_extrude(height=text_height)
