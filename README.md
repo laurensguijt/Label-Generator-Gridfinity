@@ -156,6 +156,13 @@ Every head with every drive and tip, 57 in total.
 |:---:|:---:|:---:|
 | <img src="docs/gallery/standoff_male_female.png" alt="Male-female" width="240"><br>Male-female | <img src="docs/gallery/standoff_female_female.png" alt="Female-female" width="240"><br>Female-female | <img src="docs/gallery/standoff_male_male.png" alt="Male-male" width="240"><br>Male-male |
 
+### Furniture hardware
+
+|   |   |   |
+|:---:|:---:|:---:|
+| <img src="docs/gallery/furniture_wooden_dowel.png" alt="Wooden dowel" width="240"><br>Wooden dowel | <img src="docs/gallery/furniture_expansion_sleeve.png" alt="Expansion sleeve" width="240"><br>Expansion sleeve | <img src="docs/gallery/furniture_cam_lock_nut.png" alt="Cam lock nut" width="240"><br>Cam lock nut |
+| <img src="docs/gallery/furniture_cam_lock_bolt.png" alt="Cam lock bolt" width="240"><br>Cam lock bolt |   |   |
+
 ### Other
 
 |   |   |   |
