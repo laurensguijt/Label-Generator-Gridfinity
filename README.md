@@ -52,6 +52,15 @@ Shown on a pan head. Ignored for grub screws.
 |:---:|:---:|:---:|
 | <img src="docs/gallery/bolt_pan_head_hex_socket_machine.png" alt="Machine" width="240"><br>Machine | <img src="docs/gallery/bolt_pan_head_hex_socket_wood.png" alt="Wood" width="240"><br>Wood |   |
 
+### Icon length
+
+Fixed (the default) draws every part at the same size, the length only shows in the text. Real length scales the icon with the length, long parts get a split icon.
+
+|   |   |   |
+|:---:|:---:|:---:|
+| <img src="docs/gallery/icon_length_fixed_6.png" alt="Fixed, M5x6" width="240"><br>Fixed, M5x6 | <img src="docs/gallery/icon_length_fixed_16.png" alt="Fixed, M5x16" width="240"><br>Fixed, M5x16 | <img src="docs/gallery/icon_length_fixed_40.png" alt="Fixed, M5x40" width="240"><br>Fixed, M5x40 |
+| <img src="docs/gallery/icon_length_real_length_6.png" alt="Real length, M5x6" width="240"><br>Real length, M5x6 | <img src="docs/gallery/icon_length_real_length_16.png" alt="Real length, M5x16" width="240"><br>Real length, M5x16 | <img src="docs/gallery/icon_length_real_length_40.png" alt="Real length, M5x40" width="240"><br>Real length, M5x40 |
+
 ### All bolt combinations
 
 Every head with every drive and tip, 57 in total.
