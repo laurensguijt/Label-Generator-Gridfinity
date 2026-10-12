@@ -47,6 +47,9 @@ diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
 // Used for bolts, standoffs (body without the thread stud), spacer washers (height),
 // wall anchors, heat set inserts and furniture hardware. In mm, in 0.1 steps
 hardware_length = 24; // [0:0.1:150]
+// Fixed draws every part at a size that always fits the label (the length only shows in the text).
+// Real length scales the icon with hardware_length, long parts get a split icon.
+Icon_length = "Fixed"; // [Fixed, Real length]
 
 /* [Bolt (only used when Category is Bolt)] */
 Head  = "Pan head";  // [Socket head, Pan head, Mushroom head, Flat head, Countersunk, Hex head, Grub screw]
@@ -113,6 +116,13 @@ $fa      = 5;
 Component = "";
 
 /* [Hidden] */
+// Icon sizes in mm used when Icon_length is "Fixed", the same on every label width
+fixed_icon_lengths = [
+    ["Bolt",      16],
+    ["Standoff",  10],
+    ["Spacer",     5],
+    ["Furniture", 16],
+];
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
 text_height = (text_type == "Raised Text") ? raised_text_height : 0.01;
@@ -266,9 +276,11 @@ module label(length, width, height, radius, champfer, part, diameter, hardware_l
 module choose_Part_version(part, hardware_length, width, height, diameter) {
     category = part[0];
     type     = part[1];
+    // length the icon is drawn with, the text always shows the real hardware_length
+    icon_len = icon_length(category, type, hardware_length);
 
     if (category == "Bolt") {
-        Bolt(part[1], part[2], part[3], hardware_length, height);
+        Bolt(part[1], part[2], part[3], icon_len, height);
         bolt_text(diameter, hardware_length, height);
 
     } else if (category == "Nut") {
@@ -289,14 +301,14 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
     } else if (category == "Washer") {
         if      (type == "Standard") standard_washer(width, height);
         else if (type == "Spring")   spring_washer(width, height);
-        else if (type == "Spacer")   spacer_washer(hardware_length, height);
+        else if (type == "Spacer")   spacer_washer(icon_len, height);
         else echo(str("WARNING: unknown washer type: ", type));
         if (type == "Spacer") bolt_text(diameter, hardware_length, height);
         else                  washer_text(diameter, height);
 
     } else if (category == "Standoff") {
         if (type == "Male-female" || type == "Female-female" || type == "Male-male")
-            Standoff(type, hardware_length, height);
+            Standoff(type, icon_len, height);
         else echo(str("WARNING: unknown standoff type: ", type));
         bolt_text(diameter, hardware_length, height);
 
@@ -318,10 +330,10 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
         }
 
     } else if (category == "Furniture") {
-        if      (type == "Wooden dowel")     Wooden_Dowel(hardware_length, width, height);
-        else if (type == "Expansion sleeve") Expansion_Sleeve(hardware_length, width, height);
+        if      (type == "Wooden dowel")     Wooden_Dowel(icon_len, width, height);
+        else if (type == "Expansion sleeve") Expansion_Sleeve(icon_len, width, height);
         else if (type == "Cam lock nut")     cam_lock_Nut(width, height);
-        else if (type == "Cam lock bolt")    Cam_Lock_Bolt(hardware_length, width, height);
+        else if (type == "Cam lock bolt")    Cam_Lock_Bolt(icon_len, width, height);
         else echo(str("WARNING: unknown furniture type: ", type));
         bolt_text(diameter, hardware_length, height);
 
@@ -783,6 +795,13 @@ module Bolt(head, drive, tip, hardware_length, height, vertical_offset = 2.5) {
     }
 }
 
+// Length an icon is drawn with: the real length, or a fixed size per kind of part
+function icon_length(category, type, real_length) =
+    (Icon_length == "Real length") ? real_length :
+    let (key = (category == "Washer" && type == "Spacer") ? "Spacer" : category,
+         i   = search([key], fixed_icon_lengths)[0])
+    (i == []) ? real_length : fixed_icon_lengths[i][1];
+
 // Where the stem starts, right after the head's side view
 function bolt_stem_start(head) =
     (head == "Socket head") ? 7 :
@@ -878,7 +897,7 @@ module bar_end_chamfer(x, half_height, size, dir = 1) {
 
 // Wooden dowel: round face plus a fluted body with chamfered ends
 module Wooden_Dowel(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
+    display_length = min(hardware_length, 20 * Y_units);
 
     // Same clamping as drawBoltStem, so the chamfers and flutes stay on the body
     maxLen    = 20 * Y_units;
@@ -918,7 +937,7 @@ module Wooden_Dowel(hardware_length, width, height, vertical_offset = 2.5) {
 
 // Expansion sleeve: hollow sleeve with a collar and a split expansion end
 module Expansion_Sleeve(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
+    display_length = min(hardware_length, 20 * Y_units);
 
     maxLen    = 20 * Y_units;
     finalLen  = (hardware_length > maxLen) ? maxLen : hardware_length;
@@ -983,7 +1002,7 @@ module cam_lock_Nut(width, height, vertical_offset = 2.5) {
 // Cam lock bolt (connecting bolt): mushroom head, neck and collar plus the
 // shank that screws into the panel
 module Cam_Lock_Bolt(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = (hardware_length > 20) ? 20 : hardware_length;
+    display_length = min(hardware_length, 20 * Y_units);
 
     translate([-display_length/2 - 2, vertical_offset, height]) {
         // top view (phillips drive recess in the head)

@@ -41,6 +41,7 @@ NUT_SIZE = "M5"
 WASHER_SIZE = "M5"
 STANDOFF_SIZE = ("M3", 10)
 FURNITURE_SIZE = ("8", 30)
+ICON_LENGTH_EXAMPLES = [6, 16, 40]
 WASHER_SIZES = {
     "Spacer": ("M5", 5),
 }
@@ -136,6 +137,23 @@ def collect_sections():
         "Bolt tips",
         f"Shown on a {DEFAULT_HEAD.lower()}. Ignored for grub screws.",
         [bolt(DEFAULT_HEAD, DEFAULT_DRIVE, t, t) for t in tips],
+        [],
+    ))
+
+    pictures = []
+    for mode in dropdown("Icon_length"):
+        for length in ICON_LENGTH_EXAMPLES:
+            pictures.append(Picture(
+                f"icon_length_{slug(mode, str(length))}.png",
+                f"{mode}, {BOLT_SIZE[0]}x{length}",
+                {"Category": "Bolt", "Head": DEFAULT_HEAD, "Drive": DEFAULT_DRIVE, "Tip": DEFAULT_TIP,
+                 "diameter": BOLT_SIZE[0], "hardware_length": length, "Icon_length": mode},
+            ))
+    sections.append((
+        "Icon length",
+        "Fixed (the default) draws every part at the same size, the length only shows in the text. "
+        "Real length scales the icon with the length, long parts get a split icon.",
+        pictures,
         [],
     ))
 
