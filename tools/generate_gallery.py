@@ -48,6 +48,7 @@ WASHER_SIZES = {
 OTHER_SIZES = {
     "Wall anchor": ("M6", 30),
     "Heat set insert": ("M3", 5),
+    "Threaded rod": ("M8", 1000),
     "None": ("M5", 16),
 }
 
