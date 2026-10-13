@@ -45,7 +45,8 @@ batch_label_data = [
 Category = "Bolt"; // [Bolt, Nut, Washer, Standoff, Furniture, Other]
 diameter = "M4";  // free text, e.g. "1/4-20", "#8-32"
 // Used for bolts, standoffs (body without the thread stud), spacer washers (height),
-// wall anchors, heat set inserts and furniture hardware. In mm, in 0.1 steps
+// wall anchors, heat set inserts, furniture hardware and threaded rods (0 = no length shown).
+// In mm, in 0.1 steps
 hardware_length = 24; // [0:0.1:150]
 // Fixed draws every part at a size that always fits the label (the length only shows in the text).
 // Real length scales the icon with hardware_length, long parts get a split icon.
@@ -73,7 +74,7 @@ Standoff_type = "Male-female"; // [Male-female, Female-female, Male-male]
 Furniture_type = "Wooden dowel"; // [Wooden dowel, Expansion sleeve, Cam lock nut, Cam lock bolt]
 
 /* [Other (only used when Category is Other)] */
-Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Custom text, None]
+Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Threaded rod, Custom text, None]
 // Custom text, first line (only used when Other type is set to "Custom text")
 custom_text = "Custom";
 // Custom text, second line (leave empty to show the first line full size and centered)
@@ -122,6 +123,8 @@ fixed_icon_lengths = [
     ["Standoff",  10],
     ["Spacer",     5],
     ["Furniture", 16],
+    // 0 draws the rod split, threaded rods are usually long
+    ["Threaded rod", 0],
 ];
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
@@ -319,6 +322,11 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
         } else if (type == "Heat set insert") {
             Heat_Set_Inserts(hardware_length, width, height);
             bolt_text(diameter, hardware_length, height);
+        } else if (type == "Threaded rod") {
+            // the length is optional, rods are often stored by diameter only
+            Threaded_Rod(icon_len, height);
+            if (hardware_length > 0) bolt_text(diameter, hardware_length, height);
+            else                     nut_text(diameter, height);
         } else if (type == "Custom text") {
             // Show only custom text (one or two lines)
             custom_text_lines(custom_text, custom_text_line2, height);
@@ -666,6 +674,32 @@ module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
     }
 }
 
+// Threaded rod (DIN 976): thread over the full length, drawn split when it is long or has no length
+module Threaded_Rod(hardware_length, height, vertical_offset = 2.5) {
+    rod_length     = (hardware_length > 0) ? hardware_length : 1000;
+    display_length = min(rod_length, 20 * Y_units);
+    pitch          = 1.2;
+
+    translate([-(display_length + 1.5)/2, vertical_offset, height]) {
+        // top view: round end with the thread groove
+        difference() {
+            cylinder(h=text_height, d=5);
+            difference() {
+                cylinder(h=text_height, d=4.2);
+                cylinder(h=text_height, d=3.4);
+            }
+        }
+        // side view: rod with thread notches on both edges
+        difference() {
+            drawBoltStem(rod_length, text_height, [4, -1.5, 0], thickness=3);
+            for (x = [4 + pitch/2 : pitch : 4 + display_length - pitch/2])
+                for (y = [-1.5, 1])
+                    translate([x - 0.25, y, 0])
+                        cube([0.5, 0.5, text_height]);
+        }
+    }
+}
+
 module Wall_Anchor(hardware_length, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height]) {
         difference() {
@@ -798,7 +832,9 @@ module Bolt(head, drive, tip, hardware_length, height, vertical_offset = 2.5) {
 // Length an icon is drawn with: the real length, or a fixed size per kind of part
 function icon_length(category, type, real_length) =
     (Icon_length == "Real length") ? real_length :
-    let (key = (category == "Washer" && type == "Spacer") ? "Spacer" : category,
+    let (key = (category == "Washer" && type == "Spacer")      ? "Spacer" :
+               (category == "Other" && type == "Threaded rod") ? "Threaded rod" :
+               category,
          i   = search([key], fixed_icon_lengths)[0])
     (i == []) ? real_length : fixed_icon_lengths[i][1];
 
