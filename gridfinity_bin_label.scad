@@ -73,7 +73,7 @@ Standoff_type = "Male-female"; // [Male-female, Female-female, Male-male]
 Furniture_type = "Wooden dowel"; // [Wooden dowel, Expansion sleeve, Cam lock nut, Cam lock bolt]
 
 /* [Other (only used when Category is Other)] */
-Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Custom text, None]
+Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Compression spring, Custom text, None]
 // Custom text, first line (only used when Other type is set to "Custom text")
 custom_text = "Custom";
 // Custom text, second line (leave empty to show the first line full size and centered)
@@ -122,6 +122,7 @@ fixed_icon_lengths = [
     ["Standoff",  10],
     ["Spacer",     5],
     ["Furniture", 16],
+    ["Compression spring", 16],
 ];
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
@@ -318,6 +319,9 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
             bolt_text(diameter, hardware_length, height);
         } else if (type == "Heat set insert") {
             Heat_Set_Inserts(hardware_length, width, height);
+            bolt_text(diameter, hardware_length, height);
+        } else if (type == "Compression spring") {
+            Compression_Spring(icon_len, width, height);
             bolt_text(diameter, hardware_length, height);
         } else if (type == "Custom text") {
             // Show only custom text (one or two lines)
@@ -648,6 +652,94 @@ module spacer_washer(hardware_length, height, vertical_offset = 2.5) {
     }
 }
 
+function compression_spring_path(turns=7, pitch=1.35, radius_x=0.72, radius_y=1.75, samples_per_turn=18) =
+    let(
+        steps = turns * samples_per_turn,
+        start_x = -turns * pitch / 2
+    )
+    [for (i = [0 : steps])
+        let(t = 360 * turns * i / steps)
+        [start_x + pitch * t / 360 + radius_x * sin(t), -radius_y * cos(t)]];
+
+function compression_spring_end_ellipse(center_x, center_y=0, radius_x=0.72, radius_y=1.75, samples=36, phase=0) =
+    [for (i = [0 : samples])
+        let(t = phase + 360 * i / samples)
+        [center_x + radius_x * cos(t), center_y + radius_y * sin(t)]];
+
+module rounded_stroke(points, thickness, height) {
+    for (i = [0 : len(points) - 2]) {
+        hull() {
+            translate([points[i][0], points[i][1], 0])
+                cylinder(h=height, d=thickness);
+            translate([points[i + 1][0], points[i + 1][1], 0])
+                cylinder(h=height, d=thickness);
+        }
+    }
+}
+
+module Compression_Spring(icon_length, width, height, vertical_offset = 2.5) {
+    spring_turns = 7;
+    spring_radius_x = 1.30;
+    spring_radius_y = 2.25;
+    terminal_gap = 0.25;
+    spring_pitch = max((icon_length - 2 * (terminal_gap + 2 * spring_radius_x)) / spring_turns, 0.1);
+    spring_start_x = -spring_turns * spring_pitch / 2;
+    spring_end_x = spring_start_x + spring_turns * spring_pitch;
+    left_terminal_x = spring_start_x - terminal_gap - spring_radius_x;
+    right_terminal_x = spring_end_x + terminal_gap + spring_radius_x;
+    connector_x_offset = spring_radius_x * 0.50;
+    connector_y = -spring_radius_y * 0.87;
+    stroke = 0.60;
+
+    translate([0, vertical_offset, height]) {
+        rounded_stroke(
+            compression_spring_end_ellipse(
+                center_x = left_terminal_x,
+                radius_x = spring_radius_x,
+                radius_y = spring_radius_y
+            ),
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            [[left_terminal_x + connector_x_offset, connector_y],
+             [spring_start_x, -spring_radius_y]],
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            compression_spring_path(
+                turns = spring_turns,
+                pitch = spring_pitch,
+                radius_x = spring_radius_x,
+                radius_y = spring_radius_y,
+                samples_per_turn = 20
+            ),
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            [[spring_end_x, -spring_radius_y],
+             [right_terminal_x - connector_x_offset, connector_y]],
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            compression_spring_end_ellipse(
+                center_x = right_terminal_x,
+                radius_x = spring_radius_x,
+                radius_y = spring_radius_y
+            ),
+            thickness = stroke,
+            height = text_height
+        );
+    }
+}
+
 module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height]) {
         // top view
@@ -798,7 +890,8 @@ module Bolt(head, drive, tip, hardware_length, height, vertical_offset = 2.5) {
 // Length an icon is drawn with: the real length, or a fixed size per kind of part
 function icon_length(category, type, real_length) =
     (Icon_length == "Real length") ? real_length :
-    let (key = (category == "Washer" && type == "Spacer") ? "Spacer" : category,
+    let (key = (category == "Washer" && type == "Spacer") ? "Spacer" :
+               (category == "Other" && type == "Compression spring") ? "Compression spring" : category,
          i   = search([key], fixed_icon_lengths)[0])
     (i == []) ? real_length : fixed_icon_lengths[i][1];
 
