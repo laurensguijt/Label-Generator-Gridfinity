@@ -19,6 +19,104 @@ The bin label generator supports bolts (every head with every drive and tip), nu
 
 New parts are regularly added to the library. Contributions are welcome!
 
+## Adding a part
+
+Every part lives in `gridfinity_bin_label.scad` and needs four things, all in
+that one file. Nothing else has to be touched: the gallery script reads the
+table in step 2, and the GitHub Action renders the pictures and updates the
+[Supported parts](#supported-parts) section by itself.
+
+The example below adds a rivet to the **Other** category.
+
+### 1. Put it in the dropdown
+
+Find the dropdown of the category you are adding to and add the name. The
+customizer on MakerWorld builds its menus from these comments, so the `// [...]`
+has to stay exactly in this shape.
+
+```scad
+/* [Other (only used when Category is Other)] */
+Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Threaded rod, Compression spring, Rivet, Custom text, None]
+```
+
+### 2. Add a row to `parts`
+
+The `parts` table near the top of the file says how a part behaves. A row is
+`[category, type, icon, text, gallery]`:
+
+| column | what it does |
+|---|---|
+| `category` | the dropdown it belongs to: `Bolt`, `Nut`, `Washer`, `Standoff`, `Furniture` or `Other` |
+| `type` | the name you just added, or `"*"` for every type in the category |
+| `icon` | the size in mm the icon is drawn at when **Icon_length** is `Fixed`, or `undef` to always draw it at the real length |
+| `text` | what is written under the icon: `"size"` is `M5x16`, `"diameter"` is `M5`, `"optional"` is `M5x16` or `M5` when there is no length, `"centered"` is `M5x16` without an icon, `"custom"` is the custom text lines |
+| `gallery` | the size the README picture is rendered at: `[diameter]` or `[diameter, length]` |
+
+A row for the type itself wins over the category's `"*"` row, so you only need
+your own row when the part differs from the rest of its category. A new nut, for
+instance, is covered by `["Nut", "*", ...]` and needs no row at all.
+
+```scad
+parts = [
+    // ...
+    ["Other",     "Rivet",                8,    "size",     ["M4", 8]],
+];
+```
+
+### 3. Add a line to `draw_icon`
+
+One line, next to the other parts of the category:
+
+```scad
+    else if (key == "Other/Rivet")              Rivet(icon_len, width, height);
+```
+
+### 4. Write the icon module
+
+Every icon module starts with the same three parameters, whether it uses them or
+not. `icon_len` is the length to draw at — **use this and never `hardware_length`
+directly**, otherwise the Icon_length setting silently does nothing for your
+part. The text under the icon is not your job, step 2 takes care of it.
+
+Draw at `z = height` with a thickness of `text_height`, and keep the icon above
+the text by translating it up by `vertical_offset`. Most parts show a top view on
+the left and a side view to the right of it:
+
+```scad
+// Rivet: round head seen from above, with the shank next to it
+module Rivet(icon_len, width, height, vertical_offset = 2.5) {
+    translate([-1.5, vertical_offset, height]) {
+        // top view
+        cylinder(h=text_height, d=5);
+        // side view
+        translate([4, -1.25, 0])
+            cube([icon_len, 2.5, text_height]);
+    }
+}
+```
+
+A label is 11.5 mm wide and 35.8 mm long at `Y_units = 1`, with mounting holes
+1 mm in from each end. Parts that scale with their length clamp the drawing to
+`20 * Y_units` so a long one cannot run off the label; `drawBoltStem()` does that
+for you and splits the icon in two when it no longer fits.
+
+### Check it
+
+Open the file in OpenSCAD, pick your part in the customizer and look at it at a
+few lengths, with **Icon_length** on both `Fixed` and `Real length`. Open a pull
+request and the "Parts gallery" Action renders every part and attaches the
+pictures, so you can see yours next to the rest before it is merged.
+
+Running the gallery script yourself is optional:
+
+```sh
+python3 tools/generate_gallery.py
+```
+
+It needs [OpenSCAD](https://openscad.org/) on the `PATH` (or in the `OPENSCAD`
+environment variable), and a recent build with the manifold backend so the
+pictures match the ones the Action commits.
+
 ## Supported parts
 Every part and combination the bin label generator (`gridfinity_bin_label.scad`) can draw, rendered with the default colors (white content on a black label).
 
@@ -192,13 +290,8 @@ Feel free to:
 - Add new options for mounting or design.
 - Submit pull requests with your improvements.
 
-### Adding a new part
-1. Add the part to `gridfinity_bin_label.scad`: a module for the icon, an entry in the matching customizer dropdown (e.g. `Nut_type`) and a branch in `choose_Part_version`.
-2. **Update the supported parts on this page.** Run the gallery script, it reads the dropdowns, renders a picture of every part and combination to `docs/gallery/` and rewrites the [Supported parts](#supported-parts) section:
-   ```sh
-   python3 tools/generate_gallery.py
-   ```
-   It needs [OpenSCAD](https://openscad.org/) on the `PATH` (or in the `OPENSCAD` environment variable).
-3. Commit the changed pictures and `README.md` together with your part.
+See [Adding a part](#adding-a-part) for the four steps, and please leave the
+generated files alone: the pictures in `docs/gallery/` and the
+[Supported parts](#supported-parts) section are written by the Action.
 
 Your ideas and contributions help expand this library and make it more versatile for all users.
