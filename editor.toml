@@ -53,7 +53,9 @@ head-extra = '''
     }
 
     // A section whose parameters are all hidden for the current choice leaves
-    // an empty heading behind, so fold the heading away with them.
+    // an empty heading behind, so fold the heading away with them. Only write
+    // when the value really changes, otherwise the observer below keeps
+    // waking itself up.
     function hideEmptySections() {
         try {
             document.querySelectorAll("h3.group-header").forEach(function (heading) {
@@ -66,24 +68,44 @@ head-extra = '''
                         var row = field.closest(".col-12") || field.parentElement;
                         return row && getComputedStyle(row).display !== "none";
                     });
-                heading.style.display = hasVisibleField ? "" : "none";
+                var wanted = hasVisibleField ? "" : "none";
+                if (heading.style.display !== wanted) heading.style.display = wanted;
             });
         } catch (e) {
             /* leave every heading visible */
         }
     }
 
+    var scheduled = false;
     function refresh() {
-        addColourPickers();
-        hideEmptySections();
+        if (scheduled) return;
+        scheduled = true;
+        setTimeout(function () {
+            scheduled = false;
+            addColourPickers();
+            hideEmptySections();
+        }, 0);
     }
 
     document.addEventListener("DOMContentLoaded", function () {
         refresh();
-        // The generator shows and hides fields as the form changes, so run
-        // after it, on a trailing tick.
-        document.addEventListener("change", function () { setTimeout(refresh, 0); });
-        document.addEventListener("input", function () { setTimeout(refresh, 0); });
+
+        // The generator decides which fields to show after its own start up,
+        // so watching the form is more reliable than running once. Writing
+        // only real changes above keeps this from looping.
+        try {
+            new MutationObserver(refresh).observe(document.body, {
+                attributes: true,
+                attributeFilter: ["style", "class"],
+                childList: true,
+                subtree: true
+            });
+        } catch (e) {
+            /* fall back to the events below */
+        }
+
+        document.addEventListener("change", refresh);
+        document.addEventListener("input", refresh);
     });
 })();
 </script>
