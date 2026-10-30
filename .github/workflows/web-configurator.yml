@@ -1,0 +1,93 @@
+name: Web configurator
+
+# Builds a configurator from the same .scad files the MakerWorld customizer
+# uses. The parameters come from the customizer annotations in the sources, so
+# adding a part needs no change here.
+#
+# - Pull requests: build it as a check and attach it as an artifact.
+# - Push to main: build it and publish it to GitHub Pages.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - gridfinity_bin_label.scad
+      - gridfinity_box_label.scad
+      - editor.toml
+      - .github/workflows/web-configurator.yml
+  pull_request:
+    paths:
+      - gridfinity_bin_label.scad
+      - gridfinity_box_label.scad
+      - editor.toml
+      - .github/workflows/web-configurator.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race, but let a running one finish.
+concurrency:
+  group: web-configurator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      # Only the fonts installed here end up in the bundle. The CJK families
+      # are tens of megabytes each, so they are left out on purpose and the
+      # page points at MakerWorld for those.
+      - name: Install fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-core
+
+      # The sources are CRLF (see CLAUDE.md) while the generator's parser
+      # expects Unix line endings. Without this every "// [a, b, c]" keeps a
+      # trailing carriage return, no dropdown is recognised, the form comes out
+      # as free text fields and the descriptions land on the wrong parameters.
+      # The checkout is a throwaway, so converting here changes nothing in git.
+      - name: Convert the sources to Unix line endings
+        run: perl -i -pe 's/\015//g' gridfinity_bin_label.scad gridfinity_box_label.scad
+
+      # Pinned to a commit on purpose: preview-style = "colors" is what renders
+      # the label in its own colours and it is not in a tagged release yet.
+      - uses: yawkat/web-openscad-editor@323ca329f12ea210428ed6407f57f870fba548b7
+        with:
+          config: editor.toml
+
+      # Plain copy, so a pull request can be downloaded and opened locally
+      - name: Attach it to the run
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-configurator
+          path: out
+          if-no-files-found: ignore
+
+      - name: Package it for Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Creates the Pages site on the first run if it does not exist yet.
+      - uses: actions/configure-pages@v6
+        with:
+          enablement: true
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
