@@ -12,39 +12,80 @@ name = "Label Generator for Gridfinity"
 uri = "https://github.com/laurensguijt/Label-Generator-Gridfinity"
 # The generator has no colour input, so upgrade the two hex fields into a
 # picker. Purely additive: if the fields are not found, the text stays usable.
+# Two presentation touches the generator has no setting for. Both are additive
+# and defensive: if the page ever changes shape, the form stays as it was.
+#   1. a colour picker next to the two hex colour fields
+#   2. hiding a section heading when everything under it is hidden anyway
 head-extra = '''
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+(function () {
     var hex = /^#[0-9a-fA-F]{6}$/;
-    ["Label_color", "Content_color"].forEach(function (name) {
+
+    function addColourPickers() {
+        ["Label_color", "Content_color"].forEach(function (name) {
+            try {
+                var field = document.getElementById("parameter_" + name);
+                if (!field || field.dataset.hasPicker) return;
+                field.dataset.hasPicker = "1";
+
+                var picker = document.createElement("input");
+                picker.type = "color";
+                picker.setAttribute("aria-label", name.replace("_", " "));
+                picker.className = "form-control form-control-color";
+                picker.style.flex = "0 0 auto";
+                picker.style.width = "3rem";
+                picker.value = hex.test(field.value) ? field.value : "#000000";
+
+                picker.addEventListener("input", function () {
+                    field.value = picker.value;
+                    field.dispatchEvent(new Event("input", {bubbles: true}));
+                    field.dispatchEvent(new Event("change", {bubbles: true}));
+                });
+                field.addEventListener("change", function () {
+                    if (hex.test(field.value)) picker.value = field.value;
+                });
+
+                field.parentNode.insertBefore(picker, field);
+            } catch (e) {
+                /* leave the plain text field alone */
+            }
+        });
+    }
+
+    // A section whose parameters are all hidden for the current choice leaves
+    // an empty heading behind, so fold the heading away with them.
+    function hideEmptySections() {
         try {
-            var field = document.getElementById("parameter_" + name);
-            if (!field || field.dataset.hasPicker) return;
-            field.dataset.hasPicker = "1";
-
-            var picker = document.createElement("input");
-            picker.type = "color";
-            picker.setAttribute("aria-label", name.replace("_", " "));
-            picker.className = "form-control form-control-color";
-            picker.style.flex = "0 0 auto";
-            picker.style.width = "3rem";
-            picker.value = hex.test(field.value) ? field.value : "#000000";
-
-            picker.addEventListener("input", function () {
-                field.value = picker.value;
-                field.dispatchEvent(new Event("input", {bubbles: true}));
-                field.dispatchEvent(new Event("change", {bubbles: true}));
+            document.querySelectorAll("h3.group-header").forEach(function (heading) {
+                var selector = heading.getAttribute("data-bs-target");
+                var body = selector && document.querySelector(selector);
+                if (!body) return;
+                var hasVisibleField = Array.prototype.some.call(
+                    body.querySelectorAll("[id^=parameter_]"),
+                    function (field) {
+                        var row = field.closest(".col-12") || field.parentElement;
+                        return row && getComputedStyle(row).display !== "none";
+                    });
+                heading.style.display = hasVisibleField ? "" : "none";
             });
-            field.addEventListener("change", function () {
-                if (hex.test(field.value)) picker.value = field.value;
-            });
-
-            field.parentNode.insertBefore(picker, field);
         } catch (e) {
-            /* leave the plain text field alone */
+            /* leave every heading visible */
         }
+    }
+
+    function refresh() {
+        addColourPickers();
+        hideEmptySections();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        refresh();
+        // The generator shows and hides fields as the form changes, so run
+        // after it, on a trailing tick.
+        document.addEventListener("change", function () { setTimeout(refresh, 0); });
+        document.addEventListener("input", function () { setTimeout(refresh, 0); });
     });
-});
+})();
 </script>
 '''
 
