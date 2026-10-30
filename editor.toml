@@ -1,0 +1,36 @@
+# The web configurator, built from the same sources the MakerWorld customizer
+# reads. The parameters and their dropdowns come from the customizer
+# annotations in the .scad files, so a new part shows up here by itself.
+#
+# Built and published by .github/workflows/web-configurator.yml.
+
+[project]
+name = "Label Generator for Gridfinity"
+uri = "https://github.com/laurensguijt/Label-Generator-Gridfinity"
+
+[openscad]
+# Embeds the fonts installed on the build machine, see the workflow
+font-source = "system"
+
+[model-template.default]
+# Show the label in the colours the model asks for, not a single grey
+preview-style = "colors"
+description-extra-html = """
+<p>This runs entirely in your browser, nothing is uploaded. The preview uses the
+label and content colours you pick, but the file you download is a plain STL
+without colour: print it in two colours with a filament change at the first
+layer above the label surface.</p>
+<p>Chinese and Korean fonts are not bundled here because of their size, and
+neither is a ready made multi colour file. Use the
+<a href="https://makerworld.com/en/models/769441#profileId-705079">MakerWorld
+customizer</a> for those.</p>
+"""
+
+[[model]]
+file = "gridfinity_bin_label.scad"
+index = true
+export-file-stem = { fixed = "gridfinity_bin_label" }
+
+[[model]]
+file = "gridfinity_box_label.scad"
+export-file-stem = { fixed = "gridfinity_box_label" }

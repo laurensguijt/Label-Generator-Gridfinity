@@ -10,7 +10,15 @@ The labels are fully customizable and easy to configure online, making it simple
 - Easily configurable with dimensions, fonts, styles, and more!
 
 ### Online Customization
-You can customize the labels directly in your browser using Makerworld's **online customization feature**:
+Configure a label in your browser, no account needed, at
+**[laurensguijt.github.io/Label-Generator-Gridfinity](https://laurensguijt.github.io/Label-Generator-Gridfinity/)**.
+It runs OpenSCAD in the browser, nothing is uploaded, and the link keeps your
+settings so you can share or bookmark a label. The file you download is a plain
+STL, so print it in two colours with a filament change at the first layer above
+the label surface.
+
+Or use Makerworld's **online customization feature**, which hands you a ready
+made multi colour file and has every font available:
 - **Labels for Gridfinity Bins:** [Find them here](https://makerworld.com/en/models/769441#profileId-705079)
 - **Labels for Storage Boxes:** [Find them here](https://makerworld.com/en/models/738730#profileId-694230)
 
