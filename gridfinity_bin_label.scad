@@ -74,7 +74,7 @@ Standoff_type = "Male-female"; // [Male-female, Female-female, Male-male]
 Furniture_type = "Wooden dowel"; // [Wooden dowel, Expansion sleeve, Cam lock nut, Cam lock bolt]
 
 /* [Other (only used when Category is Other)] */
-Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Threaded rod, Custom text, None]
+Other_type = "Wall anchor"; // [Wall anchor, Heat set insert, Threaded rod, Compression spring, Custom text, None]
 // Custom text, first line (only used when Other type is set to "Custom text")
 custom_text = "Custom";
 // Custom text, second line (leave empty to show the first line full size and centered)
@@ -125,6 +125,7 @@ fixed_icon_lengths = [
     ["Furniture", 16],
     // 0 draws the rod split, threaded rods are usually long
     ["Threaded rod", 0],
+    ["Compression spring", 16],
 ];
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
@@ -327,6 +328,9 @@ module choose_Part_version(part, hardware_length, width, height, diameter) {
             Threaded_Rod(icon_len, height);
             if (hardware_length > 0) bolt_text(diameter, hardware_length, height);
             else                     nut_text(diameter, height);
+        } else if (type == "Compression spring") {
+            Compression_Spring(icon_len, width, height);
+            bolt_text(diameter, hardware_length, height);
         } else if (type == "Custom text") {
             // Show only custom text (one or two lines)
             custom_text_lines(custom_text, custom_text_line2, height);
@@ -656,6 +660,101 @@ module spacer_washer(hardware_length, height, vertical_offset = 2.5) {
     }
 }
 
+// The wire of the helix, seen from the side
+function compression_spring_path(turns, pitch, radius_x, radius_y, samples_per_turn = 20) =
+    let(
+        steps = turns * samples_per_turn,
+        start_x = -turns * pitch / 2
+    )
+    [for (i = [0 : steps])
+        let(t = 360 * turns * i / steps)
+        [start_x + pitch * t / 360 + radius_x * sin(t), -radius_y * cos(t)]];
+
+// A closed end coil, seen from the side
+function compression_spring_end_ellipse(center_x, radius_x, radius_y, center_y = 0, samples = 36) =
+    [for (i = [0 : samples])
+        let(t = 360 * i / samples)
+        [center_x + radius_x * cos(t), center_y + radius_y * sin(t)]];
+
+// A path drawn as a ribbon of the given thickness. The hulls are done in 2D
+// and extruded once, which renders far faster than hulling cylinders in 3D.
+module rounded_stroke(points, thickness, height) {
+    linear_extrude(height = height)
+        for (i = [0 : len(points) - 2]) {
+            hull() {
+                translate(points[i])     circle(d = thickness);
+                translate(points[i + 1]) circle(d = thickness);
+            }
+        }
+}
+
+// Compression spring: a helix with a closed coil at each end
+module Compression_Spring(hardware_length, width, height, vertical_offset = 2.5) {
+    spring_turns = 7;
+    spring_radius_x = 1.30;
+    spring_radius_y = 2.25;
+    terminal_gap = 0.25;
+    // clamped like the other icons, the text keeps showing the real length
+    display_length = min(hardware_length, 20 * Y_units);
+    // the floor keeps the coils apart on a short spring instead of piling them up
+    spring_pitch = max((display_length - 2 * (terminal_gap + 2 * spring_radius_x)) / spring_turns, 0.9);
+    spring_start_x = -spring_turns * spring_pitch / 2;
+    spring_end_x = spring_start_x + spring_turns * spring_pitch;
+    left_terminal_x = spring_start_x - terminal_gap - spring_radius_x;
+    right_terminal_x = spring_end_x + terminal_gap + spring_radius_x;
+    connector_x_offset = spring_radius_x * 0.50;
+    connector_y = -spring_radius_y * 0.87;
+    stroke = 0.60;
+
+    translate([0, vertical_offset, height]) {
+        rounded_stroke(
+            compression_spring_end_ellipse(
+                center_x = left_terminal_x,
+                radius_x = spring_radius_x,
+                radius_y = spring_radius_y
+            ),
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            [[left_terminal_x + connector_x_offset, connector_y],
+             [spring_start_x, -spring_radius_y]],
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            compression_spring_path(
+                turns = spring_turns,
+                pitch = spring_pitch,
+                radius_x = spring_radius_x,
+                radius_y = spring_radius_y,
+                samples_per_turn = 20
+            ),
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            [[spring_end_x, -spring_radius_y],
+             [right_terminal_x - connector_x_offset, connector_y]],
+            thickness = stroke,
+            height = text_height
+        );
+
+        rounded_stroke(
+            compression_spring_end_ellipse(
+                center_x = right_terminal_x,
+                radius_x = spring_radius_x,
+                radius_y = spring_radius_y
+            ),
+            thickness = stroke,
+            height = text_height
+        );
+    }
+}
+
 module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height]) {
         // top view
@@ -832,8 +931,9 @@ module Bolt(head, drive, tip, hardware_length, height, vertical_offset = 2.5) {
 // Length an icon is drawn with: the real length, or a fixed size per kind of part
 function icon_length(category, type, real_length) =
     (Icon_length == "Real length") ? real_length :
-    let (key = (category == "Washer" && type == "Spacer")      ? "Spacer" :
-               (category == "Other" && type == "Threaded rod") ? "Threaded rod" :
+    let (key = (category == "Washer" && type == "Spacer")            ? "Spacer" :
+               (category == "Other" && type == "Threaded rod")       ? "Threaded rod" :
+               (category == "Other" && type == "Compression spring") ? "Compression spring" :
                category,
          i   = search([key], fixed_icon_lengths)[0])
     (i == []) ? real_length : fixed_icon_lengths[i][1];

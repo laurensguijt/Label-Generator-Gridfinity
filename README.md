@@ -15,7 +15,7 @@ You can customize the labels directly in your browser using Makerworld's **onlin
 - **Labels for Storage Boxes:** [Find them here](https://makerworld.com/en/models/738730#profileId-694230)
 
 ### Variety of Attachment Options
-The bin label generator supports bolts (every head with every drive and tip), nuts, washers, standoffs, wall anchors, heat set inserts, threaded rods and furniture hardware (wooden dowels, expansion sleeves, cam lock nuts and bolts). See [Supported parts](#supported-parts) for a picture of each one.
+The bin label generator supports bolts (every head with every drive and tip), nuts, washers, standoffs, wall anchors, heat set inserts, threaded rods, compression springs and furniture hardware (wooden dowels, expansion sleeves, cam lock nuts and bolts). See [Supported parts](#supported-parts) for a picture of each one.
 
 New parts are regularly added to the library. Contributions are welcome!
 

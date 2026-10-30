@@ -49,6 +49,7 @@ OTHER_SIZES = {
     "Wall anchor": ("M6", 30),
     "Heat set insert": ("M3", 5),
     "Threaded rod": ("M8", 1000),
+    "Compression spring": ("6", 20),
     "None": ("M5", 16),
 }
 
