@@ -117,15 +117,36 @@ $fa      = 5;
 Component = "";
 
 /* [Hidden] */
-// Icon sizes in mm used when Icon_length is "Fixed", the same on every label width
-fixed_icon_lengths = [
-    ["Bolt",      16],
-    ["Standoff",  10],
-    ["Spacer",     5],
-    ["Furniture", 16],
-    // 0 draws the rod split, threaded rods are usually long
-    ["Threaded rod", 0],
-    ["Compression spring", 16],
+// Every part the generator can draw, in one place.
+//
+//     [category, type, icon, text, gallery]
+//
+// type     the value in the category's dropdown, or "*" for every type in the
+//          category. An exact type wins over the category's "*" row, so a part
+//          only needs its own row when it differs from the rest of its category
+// icon     the size in mm the icon is drawn at when Icon_length is "Fixed", or
+//          undef to always draw it at the real hardware_length
+// text     what is written under the icon:
+//            "size"      M5x16
+//            "diameter"  M5
+//            "optional"  M5x16, or M5 when hardware_length is 0
+//            "centered"  M5x16 in the middle, for parts without an icon
+//            "custom"    the custom text lines
+// gallery  the size the README picture is rendered at, [diameter] or
+//          [diameter, length]
+parts = [
+    ["Bolt",      "*",                   16,    "size",     ["M5", 16]],
+    ["Nut",       "*",                   undef, "diameter", ["M5"]],
+    ["Washer",    "*",                   undef, "diameter", ["M5"]],
+    ["Washer",    "Spacer",               5,    "size",     ["M5", 5]],
+    ["Standoff",  "*",                   10,    "size",     ["M3", 10]],
+    ["Furniture", "*",                   16,    "size",     ["8", 30]],
+    ["Other",     "Wall anchor",         undef, "size",     ["M6", 30]],
+    ["Other",     "Heat set insert",     undef, "size",     ["M3", 5]],
+    ["Other",     "Threaded rod",        1000,  "optional", ["M8", 1000]],
+    ["Other",     "Compression spring",   16,   "size",     ["6", 20]],
+    ["Other",     "Custom text",         undef, "custom",   []],
+    ["Other",     "None",                undef, "centered", ["M5", 16]],
 ];
 Font        = str(text_font, ":style=", Font_Style);
 length      = getDimensions(Y_units);
@@ -280,85 +301,81 @@ module label(length, width, height, radius, champfer, part, diameter, hardware_l
 module choose_Part_version(part, hardware_length, width, height, diameter) {
     category = part[0];
     type     = part[1];
-    // length the icon is drawn with, the text always shows the real hardware_length
+    // the icon is drawn at icon_len, the text always shows the real hardware_length
     icon_len = icon_length(category, type, hardware_length);
 
-    if (category == "Bolt") {
-        Bolt(part[1], part[2], part[3], icon_len, height);
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (category == "Nut") {
-        if      (type == "Standard")       standard_Nut(width, height);
-        else if (type == "Tall")           Tall_Nut(width, height);
-        else if (type == "Square")         Square_Nut(width, height);
-        else if (type == "Lock")           lock_Nut(width, height);
-        else if (type == "Castle")         Castle_Nut(width, height);
-        else if (type == "Cap")            Cap_Nut(width, height);
-        else if (type == "Eye")            Eye_Nut(width, height);
-        else if (type == "Disc")           Disc_Nut(width, height);
-        else if (type == "Wing")           Wing_Nut(width, height);
-        else if (type == "Slide-in T-nut") Slide_in_T_Nut(width, height);
-        else if (type == "Hammer")         Hammer_Nut(width, height);
-        else echo(str("WARNING: unknown nut type: ", type));
-        nut_text(diameter, height);
-
-    } else if (category == "Washer") {
-        if      (type == "Standard") standard_washer(width, height);
-        else if (type == "Spring")   spring_washer(width, height);
-        else if (type == "Spacer")   spacer_washer(icon_len, height);
-        else echo(str("WARNING: unknown washer type: ", type));
-        if (type == "Spacer") bolt_text(diameter, hardware_length, height);
-        else                  washer_text(diameter, height);
-
-    } else if (category == "Standoff") {
-        if (type == "Male-female" || type == "Female-female" || type == "Male-male")
-            Standoff(type, icon_len, height);
-        else echo(str("WARNING: unknown standoff type: ", type));
-        bolt_text(diameter, hardware_length, height);
-
-    } else if (category == "Other") {
-        if (type == "Wall anchor") {
-            Wall_Anchor(hardware_length, width, height);
-            bolt_text(diameter, hardware_length, height);
-        } else if (type == "Heat set insert") {
-            Heat_Set_Inserts(hardware_length, width, height);
-            bolt_text(diameter, hardware_length, height);
-        } else if (type == "Threaded rod") {
-            // the length is optional, rods are often stored by diameter only
-            Threaded_Rod(icon_len, height);
-            if (hardware_length > 0) bolt_text(diameter, hardware_length, height);
-            else                     nut_text(diameter, height);
-        } else if (type == "Compression spring") {
-            Compression_Spring(icon_len, width, height);
-            bolt_text(diameter, hardware_length, height);
-        } else if (type == "Custom text") {
-            // Show only custom text (one or two lines)
-            custom_text_lines(custom_text, custom_text_line2, height);
-        } else if (type == "None") {
-            // Don't draw any icon, just show the text
-            centered_text(str(diameter, "x", hardware_length), height);
-        } else {
-            echo(str("WARNING: unknown other type: ", type));
-        }
-
-    } else if (category == "Furniture") {
-        if      (type == "Wooden dowel")     Wooden_Dowel(icon_len, width, height);
-        else if (type == "Expansion sleeve") Expansion_Sleeve(icon_len, width, height);
-        else if (type == "Cam lock nut")     cam_lock_Nut(width, height);
-        else if (type == "Cam lock bolt")    Cam_Lock_Bolt(icon_len, width, height);
-        else echo(str("WARNING: unknown furniture type: ", type));
-        bolt_text(diameter, hardware_length, height);
-
-    } else {
-        echo(str("WARNING: unknown component: ", type));
-    }
+    draw_icon(part, icon_len, width, height);
+    part_text(category, type, diameter, hardware_length, height);
 }
 
 
 //////////////////////////////////////////////////////////////
+//          DISPATCH: WHICH PART ICON TO DRAW              //
+//////////////////////////////////////////////////////////////
+// One line per part. Every icon module takes (icon_len, width, height) first,
+// whatever a part needs on top of that follows.
+module draw_icon(part, icon_len, width, height) {
+    category = part[0];
+    type     = part[1];
+    key      = str(category, "/", type);
+
+    if (category == "Bolt") Bolt(icon_len, width, height, type, part[2], part[3]);
+
+    else if (key == "Nut/Standard")               standard_Nut(icon_len, width, height);
+    else if (key == "Nut/Tall")                   Tall_Nut(icon_len, width, height);
+    else if (key == "Nut/Square")                 Square_Nut(icon_len, width, height);
+    else if (key == "Nut/Lock")                   lock_Nut(icon_len, width, height);
+    else if (key == "Nut/Castle")                 Castle_Nut(icon_len, width, height);
+    else if (key == "Nut/Cap")                    Cap_Nut(icon_len, width, height);
+    else if (key == "Nut/Eye")                    Eye_Nut(icon_len, width, height);
+    else if (key == "Nut/Disc")                   Disc_Nut(icon_len, width, height);
+    else if (key == "Nut/Wing")                   Wing_Nut(icon_len, width, height);
+    else if (key == "Nut/Slide-in T-nut")         Slide_in_T_Nut(icon_len, width, height);
+    else if (key == "Nut/Hammer")                 Hammer_Nut(icon_len, width, height);
+    else if (key == "Washer/Standard")            standard_washer(icon_len, width, height);
+    else if (key == "Washer/Spring")              spring_washer(icon_len, width, height);
+    else if (key == "Washer/Spacer")              spacer_washer(icon_len, width, height);
+    else if (key == "Standoff/Male-female")       Standoff(icon_len, width, height, type);
+    else if (key == "Standoff/Female-female")     Standoff(icon_len, width, height, type);
+    else if (key == "Standoff/Male-male")         Standoff(icon_len, width, height, type);
+    else if (key == "Furniture/Wooden dowel")     Wooden_Dowel(icon_len, width, height);
+    else if (key == "Furniture/Expansion sleeve") Expansion_Sleeve(icon_len, width, height);
+    else if (key == "Furniture/Cam lock nut")     cam_lock_Nut(icon_len, width, height);
+    else if (key == "Furniture/Cam lock bolt")    Cam_Lock_Bolt(icon_len, width, height);
+    else if (key == "Other/Wall anchor")          Wall_Anchor(icon_len, width, height);
+    else if (key == "Other/Heat set insert")      Heat_Set_Inserts(icon_len, width, height);
+    else if (key == "Other/Threaded rod")         Threaded_Rod(icon_len, width, height);
+    else if (key == "Other/Compression spring")   Compression_Spring(icon_len, width, height);
+    else if (key == "Other/Custom text")          ;  // the custom text is the whole label
+    else if (key == "Other/None")                 ;  // no icon, just the text
+
+    else echo(str("WARNING: unknown part: ", key));
+}
+
+
+//////////////////////////////////////////////////////////////
+//             TEXT UNDER THE ICON (from "parts")          //
+//////////////////////////////////////////////////////////////
+module part_text(category, type, diameter, hardware_length, height) {
+    row   = part_row(category, type);
+    style = (row == undef) ? "none" : row[3];
+
+    if      (style == "none")     ;  // not a known part, draw_icon already warned
+    else if (style == "size")     size_text(diameter, hardware_length, height);
+    else if (style == "diameter") diameter_text(diameter, height);
+    else if (style == "optional") {
+        if (hardware_length > 0) size_text(diameter, hardware_length, height);
+        else                     diameter_text(diameter, height);
+    }
+    else if (style == "centered") centered_text(str(diameter, "x", hardware_length), height);
+    else if (style == "custom")   custom_text_lines(custom_text, custom_text_line2, height);
+    else echo(str("WARNING: unknown text style: ", style));
+}
+
+//////////////////////////////////////////////////////////////
 //    NUTS / WASHERS / INSERTS (Top View + Side View)      //
 //////////////////////////////////////////////////////////////
-module standard_Nut(width, height, vertical_offset = 2.5) {
+module standard_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-2.5, vertical_offset, height]) {
         // top view
         difference() {
@@ -372,7 +389,7 @@ module standard_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Tall hex nut (DIN 6330 / ISO 4033): like the standard nut, drawn twice as high so it stands out
-module Tall_Nut(width, height, vertical_offset = 2.5) {
+module Tall_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-3.9, vertical_offset, height]) {
         // top view
         difference() {
@@ -391,7 +408,7 @@ module Tall_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Square nut (DIN 557 / DIN 562)
-module Square_Nut(width, height, vertical_offset = 2.5) {
+module Square_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-2.5, vertical_offset, height]) {
         // top view: square body with threaded hole
         difference() {
@@ -405,7 +422,7 @@ module Square_Nut(width, height, vertical_offset = 2.5) {
     }
 }
 
-module lock_Nut(width, height, vertical_offset = 2.5) {
+module lock_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-2.5, vertical_offset, height]) {
         // top view
         difference() {
@@ -422,7 +439,7 @@ module lock_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Castle nut / slotted nut (DIN 935): hex body with a slotted crown for a split pin
-module Castle_Nut(width, height, vertical_offset = 2.5) {
+module Castle_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-3.3, vertical_offset, height]) {
         // top view: hex with threaded hole and the three slots across the crown
         difference() {
@@ -446,7 +463,7 @@ module Castle_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Cap nut / acorn nut (DIN 1587): hex body closed by a dome
-module Cap_Nut(width, height, vertical_offset = 2.5) {
+module Cap_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-2.5, vertical_offset, height]) {
         // top view: closed hex with the outline of the dome
         difference() {
@@ -469,7 +486,7 @@ module Cap_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Eye nut / ring nut (DIN 582): lifting eye on a round collar with threaded hole
-module Eye_Nut(width, height, vertical_offset = 2.5) {
+module Eye_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height])
         linear_extrude(height=text_height) {
             // top view: round collar with the eye seen edge-on across it
@@ -495,7 +512,7 @@ module Eye_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Disc nut: hex nut captive on a large round washer
-module Disc_Nut(width, height, vertical_offset = 2.5) {
+module Disc_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-3, vertical_offset, height]) {
         // top view: hex nut with threaded hole, framed by the washer
         difference() {
@@ -515,7 +532,7 @@ module Disc_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Wing nut (DIN 315): round hub with two wings for turning by hand
-module Wing_Nut(width, height, vertical_offset = 2.5) {
+module Wing_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-4.25, vertical_offset, height])
         linear_extrude(height=text_height) {
             // top view: hub with threaded hole, wings as a thin bar
@@ -543,7 +560,7 @@ module Wing_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Slide-in T-nut for aluminium profiles (inserted from the profile end)
-module Slide_in_T_Nut(width, height, vertical_offset = 2.5) {
+module Slide_in_T_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height]) {
         // top view: rectangular block with threaded hole
         difference() {
@@ -560,7 +577,7 @@ module Slide_in_T_Nut(width, height, vertical_offset = 2.5) {
 }
 
 // Hammer nut for aluminium profiles (dropped into the slot, turned 90°)
-module Hammer_Nut(width, height, vertical_offset = 2.5) {
+module Hammer_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height]) {
         // top view: two opposite corners rounded so it can rotate in the slot
         difference() {
@@ -584,7 +601,7 @@ module Hammer_Nut(width, height, vertical_offset = 2.5) {
     }
 }
 
-module standard_washer(width, height, vertical_offset = 2.5) {
+module standard_washer(icon_len, width, height, vertical_offset = 2.5) {
     translate([-1.5, vertical_offset, height]) {
         // top view
         difference() {
@@ -597,7 +614,7 @@ module standard_washer(width, height, vertical_offset = 2.5) {
     }
 }
 
-module spring_washer(width, height, vertical_offset = 2.5) {
+module spring_washer(icon_len, width, height, vertical_offset = 2.5) {
     translate([-1.5, vertical_offset, height]) {
         // top view (split ring)
         difference() {
@@ -612,8 +629,8 @@ module spring_washer(width, height, vertical_offset = 2.5) {
 }
 
 // Hex standoff / spacer (e.g. brass M3 for mainboards), male ends get a thread stud
-module Standoff(type, hardware_length, height, vertical_offset = 2.5) {
-    display_length = min(hardware_length, 20 * Y_units);
+module Standoff(icon_len, width, height, type, vertical_offset = 2.5) {
+    display_length = min(icon_len, 20 * Y_units);
     stud_length    = 2.5;
     male_start     = (type == "Male-male");
     male_end       = (type != "Female-female");
@@ -632,7 +649,7 @@ module Standoff(type, hardware_length, height, vertical_offset = 2.5) {
 
         // side view: hex body with the edges between its faces
         difference() {
-            drawBoltStem(hardware_length, text_height, [body_x, -2, 0], thickness=4);
+            drawBoltStem(icon_len, text_height, [body_x, -2, 0], thickness=4);
             for (y = [-1.05, 0.65])
                 translate([body_x, y, 0])
                     cube([display_length, 0.4, text_height]);
@@ -647,8 +664,8 @@ module Standoff(type, hardware_length, height, vertical_offset = 2.5) {
 }
 
 // Spacer washer / spacer sleeve: a washer with a given height, the side view grows with it
-module spacer_washer(hardware_length, height, vertical_offset = 2.5) {
-    display_length = min(hardware_length, 20 * Y_units);
+module spacer_washer(icon_len, width, height, vertical_offset = 2.5) {
+    display_length = min(icon_len, 20 * Y_units);
     translate([-(display_length + 1.5)/2, vertical_offset, height]) {
         // top view
         difference() {
@@ -656,7 +673,7 @@ module spacer_washer(hardware_length, height, vertical_offset = 2.5) {
             cylinder(h=text_height, d=3);
         }
         // side view, split like a bolt stem when it is too long for the label
-        drawBoltStem(hardware_length, text_height, [4, -2.5, 0], thickness=5);
+        drawBoltStem(icon_len, text_height, [4, -2.5, 0], thickness=5);
     }
 }
 
@@ -689,13 +706,13 @@ module rounded_stroke(points, thickness, height) {
 }
 
 // Compression spring: a helix with a closed coil at each end
-module Compression_Spring(hardware_length, width, height, vertical_offset = 2.5) {
+module Compression_Spring(icon_len, width, height, vertical_offset = 2.5) {
     spring_turns = 7;
     spring_radius_x = 1.30;
     spring_radius_y = 2.25;
     terminal_gap = 0.25;
     // clamped like the other icons, the text keeps showing the real length
-    display_length = min(hardware_length, 20 * Y_units);
+    display_length = min(icon_len, 20 * Y_units);
     // the floor keeps the coils apart on a short spring instead of piling them up
     spring_pitch = max((display_length - 2 * (terminal_gap + 2 * spring_radius_x)) / spring_turns, 0.9);
     spring_start_x = -spring_turns * spring_pitch / 2;
@@ -755,7 +772,7 @@ module Compression_Spring(hardware_length, width, height, vertical_offset = 2.5)
     }
 }
 
-module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
+module Heat_Set_Inserts(icon_len, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height]) {
         // top view
         difference() {
@@ -774,8 +791,8 @@ module Heat_Set_Inserts(hardware_length, width, height, vertical_offset = 2.5) {
 }
 
 // Threaded rod (DIN 976): thread over the full length, drawn split when it is long or has no length
-module Threaded_Rod(hardware_length, height, vertical_offset = 2.5) {
-    rod_length     = (hardware_length > 0) ? hardware_length : 1000;
+module Threaded_Rod(icon_len, width, height, vertical_offset = 2.5) {
+    rod_length     = (icon_len > 0) ? icon_len : 1000;
     display_length = min(rod_length, 20 * Y_units);
     pitch          = 1.2;
 
@@ -799,7 +816,7 @@ module Threaded_Rod(hardware_length, height, vertical_offset = 2.5) {
     }
 }
 
-module Wall_Anchor(hardware_length, width, height, vertical_offset = 2.5) {
+module Wall_Anchor(icon_len, width, height, vertical_offset = 2.5) {
     translate([-4, vertical_offset, height]) {
         difference() {
             // 1) The main geometry, combined via union()
@@ -898,15 +915,15 @@ module Torx_star(points, point_len, height=2, rnd=0.1) {
 
 
 // Bolts and screws, built from a head (side view), a drive (top view) and a tip
-module Bolt(head, drive, tip, hardware_length, height, vertical_offset = 2.5) {
-    display_length = min(hardware_length, 20 * Y_units);
+module Bolt(icon_len, width, height, head, drive, tip, vertical_offset = 2.5) {
+    display_length = min(icon_len, 20 * Y_units);
     translate([-display_length/2 - 2, vertical_offset, height]) {
         bolt_top_view(head, drive);
 
         if (head == "Grub screw") {
             // side view: full diameter threaded body with the drive at one end
             difference() {
-                drawBoltStem(hardware_length, text_height, [4, -2, 0], thickness=4);
+                drawBoltStem(icon_len, text_height, [4, -2, 0], thickness=4);
                 translate([4, -0.8, 0])
                     cube([1.5, 1.6, text_height]);
             }
@@ -916,27 +933,30 @@ module Bolt(head, drive, tip, hardware_length, height, vertical_offset = 2.5) {
 
             if (tip == "Wood") {
                 // stem shortened by 1.5 for the tip, clamped like in drawBoltStem
-                stem_length = max(hardware_length - 1.5, 0);
+                stem_length = max(icon_len - 1.5, 0);
                 drawBoltStem(stem_length, text_height, [stem_x, -1.25, 0]);
                 translate([stem_x + min(stem_length, 20 * Y_units), 0, 0])
                     linear_extrude(height=text_height)
                         polygon(points=[[0, 1.25], [2, 0], [0, -1.25]]);
             } else {
-                drawBoltStem(hardware_length, text_height, [stem_x, -1.25, 0]);
+                drawBoltStem(icon_len, text_height, [stem_x, -1.25, 0]);
             }
         }
     }
 }
 
-// Length an icon is drawn with: the real length, or a fixed size per kind of part
+// The row in "parts" for a part: its own row if it has one, else the "*" row
+// of its category, else undef for a part that is not in the table
+function part_row(category, type) =
+    let (own = [for (p = parts) if (p[0] == category && p[1] == type) p],
+         any = [for (p = parts) if (p[0] == category && p[1] == "*")  p])
+    (len(own) > 0) ? own[0] : (len(any) > 0) ? any[0] : undef;
+
+// Length an icon is drawn with: the real length, or the fixed size from the table
 function icon_length(category, type, real_length) =
-    (Icon_length == "Real length") ? real_length :
-    let (key = (category == "Washer" && type == "Spacer")            ? "Spacer" :
-               (category == "Other" && type == "Threaded rod")       ? "Threaded rod" :
-               (category == "Other" && type == "Compression spring") ? "Compression spring" :
-               category,
-         i   = search([key], fixed_icon_lengths)[0])
-    (i == []) ? real_length : fixed_icon_lengths[i][1];
+    let (row = part_row(category, type))
+    (Icon_length == "Real length" || row == undef || row[2] == undef)
+        ? real_length : row[2];
 
 // Where the stem starts, right after the head's side view
 function bolt_stem_start(head) =
@@ -1032,12 +1052,12 @@ module bar_end_chamfer(x, half_height, size, dir = 1) {
 }
 
 // Wooden dowel: round face plus a fluted body with chamfered ends
-module Wooden_Dowel(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = min(hardware_length, 20 * Y_units);
+module Wooden_Dowel(icon_len, width, height, vertical_offset = 2.5) {
+    display_length = min(icon_len, 20 * Y_units);
 
     // Same clamping as drawBoltStem, so the chamfers and flutes stay on the body
     maxLen    = 20 * Y_units;
-    finalLen  = (hardware_length > maxLen) ? maxLen : hardware_length;
+    finalLen  = (icon_len > maxLen) ? maxLen : icon_len;
     bodyStart = [4, -2, 0];
     bodyEnd   = bodyStart[0] + finalLen;
     fluteLen  = (finalLen > 3) ? finalLen - 2 : 0;
@@ -1054,7 +1074,7 @@ module Wooden_Dowel(hardware_length, width, height, vertical_offset = 2.5) {
 
         // side view
         difference() {
-            drawBoltStem(hardware_length, text_height, bodyStart, thickness=4);
+            drawBoltStem(icon_len, text_height, bodyStart, thickness=4);
 
             // chamfered ends
             bar_end_chamfer(bodyStart[0], 2, 0.7,  1);
@@ -1072,11 +1092,11 @@ module Wooden_Dowel(hardware_length, width, height, vertical_offset = 2.5) {
 }
 
 // Expansion sleeve: hollow sleeve with a collar and a split expansion end
-module Expansion_Sleeve(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = min(hardware_length, 20 * Y_units);
+module Expansion_Sleeve(icon_len, width, height, vertical_offset = 2.5) {
+    display_length = min(icon_len, 20 * Y_units);
 
     maxLen    = 20 * Y_units;
-    finalLen  = (hardware_length > maxLen) ? maxLen : hardware_length;
+    finalLen  = (icon_len > maxLen) ? maxLen : icon_len;
     bodyStart = [4, -2, 0];
     bodyEnd   = bodyStart[0] + finalLen;
     slotStart = bodyStart[0] + finalLen * 0.4;
@@ -1094,7 +1114,7 @@ module Expansion_Sleeve(hardware_length, width, height, vertical_offset = 2.5) {
                 translate([3, -2.5, 0])
                     cube([1.2, 5, text_height]);
                 // sleeve body
-                drawBoltStem(hardware_length, text_height, bodyStart, thickness=4);
+                drawBoltStem(icon_len, text_height, bodyStart, thickness=4);
             }
 
             // slot the sleeve expands along
@@ -1110,7 +1130,7 @@ module Expansion_Sleeve(hardware_length, width, height, vertical_offset = 2.5) {
 // Cam lock nut (cam / eccentric): drive face plus a side view showing the
 // keyhole the connecting bolt hooks into. The housing is drawn at a fixed
 // size, the length only shows up in the text.
-module cam_lock_Nut(width, height, vertical_offset = 2.5) {
+module cam_lock_Nut(icon_len, width, height, vertical_offset = 2.5) {
     translate([-3, vertical_offset, height]) {
         // top view
         difference() {
@@ -1137,8 +1157,8 @@ module cam_lock_Nut(width, height, vertical_offset = 2.5) {
 
 // Cam lock bolt (connecting bolt): mushroom head, neck and collar plus the
 // shank that screws into the panel
-module Cam_Lock_Bolt(hardware_length, width, height, vertical_offset = 2.5) {
-    display_length = min(hardware_length, 20 * Y_units);
+module Cam_Lock_Bolt(icon_len, width, height, vertical_offset = 2.5) {
+    display_length = min(icon_len, 20 * Y_units);
 
     translate([-display_length/2 - 2, vertical_offset, height]) {
         // top view (phillips drive recess in the head)
@@ -1166,7 +1186,7 @@ module Cam_Lock_Bolt(hardware_length, width, height, vertical_offset = 2.5) {
             cube([1, 4.4, text_height]);
 
         // shank
-        drawBoltStem(hardware_length, text_height, [7.7, -1.25, 0]);
+        drawBoltStem(icon_len, text_height, [7.7, -1.25, 0]);
     }
 }
 
@@ -1184,7 +1204,8 @@ module centered_text(content, height) {
                  halign = "center");
 }
 
-module bolt_text(diameter, Length, height) {
+// The size under the icon, "M5x16"
+module size_text(diameter, Length, height) {
     translate([0, -3, height])
         linear_extrude(height=text_height)
             text(str(diameter, "x", Length),
@@ -1194,17 +1215,8 @@ module bolt_text(diameter, Length, height) {
                  halign = "center");
 }
 
-module nut_text(diameter, height) {
-    translate([0, -3, height])
-        linear_extrude(height=text_height)
-            text(diameter,
-                 size   = text_size,
-                 font   = Font,
-                 valign = "center",
-                 halign = "center");
-}
-
-module washer_text(diameter, height) {
+// Just the diameter, "M5"
+module diameter_text(diameter, height) {
     translate([0, -3, height])
         linear_extrude(height=text_height)
             text(diameter,

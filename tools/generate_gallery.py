@@ -35,23 +35,8 @@ IMAGE_SIZE = "480,160"
 CAMERA = "0,0,0,0,0,0,37"
 TABLE_COLUMNS = 3
 
-# Sizes used for the pictures, per category
-BOLT_SIZE = ("M5", 16)
-NUT_SIZE = "M5"
-WASHER_SIZE = "M5"
-STANDOFF_SIZE = ("M3", 10)
-FURNITURE_SIZE = ("8", 30)
+# Lengths shown in the "Icon length" section
 ICON_LENGTH_EXAMPLES = [6, 16, 40]
-WASHER_SIZES = {
-    "Spacer": ("M5", 5),
-}
-OTHER_SIZES = {
-    "Wall anchor": ("M6", 30),
-    "Heat set insert": ("M3", 5),
-    "Threaded rod": ("M8", 1000),
-    "Compression spring": ("6", 20),
-    "None": ("M5", 16),
-}
 
 # Defaults used when showing one dropdown on its own
 DEFAULT_HEAD = "Pan head"
@@ -63,11 +48,36 @@ HEADS_WITHOUT_DRIVE = ["Hex head"]
 HEADS_WITHOUT_TIP = ["Grub screw"]
 
 
+def source():
+    with open(SCAD, encoding="utf-8") as f:
+        return f.read()
+
+
+def part_sizes():
+    """The gallery size of every part, read from the "parts" table in the .scad."""
+    block = re.search(r"^parts\s*=\s*\[(.*?)^\];", source(), re.M | re.S)
+    if not block:
+        sys.exit(f'The "parts" table was not found in {SCAD}')
+    rows = re.findall(r'\["([^"]*)",\s*"([^"]*)",\s*[^,]+,\s*"[^"]*",\s*\[([^\]]*)\]\]',
+                      block.group(1))
+    return {(category, option): [v.strip().strip('"') for v in size.split(",") if v.strip()]
+            for category, option, size in rows}
+
+
+def size_params(sizes, category, option):
+    """The -D parameters for a picture: the part's own size, else its category's."""
+    size = sizes.get((category, option), sizes.get((category, "*"), []))
+    params = {}
+    if size:
+        params["diameter"] = size[0]
+    if len(size) > 1:
+        params["hardware_length"] = float(size[1]) if "." in size[1] else int(size[1])
+    return params
+
+
 def dropdown(name):
     """Return the options of a customizer dropdown, e.g. Head = "..."; // [a, b]"""
-    with open(SCAD, encoding="utf-8") as f:
-        source = f.read()
-    match = re.search(r"^\s*" + re.escape(name) + r'\s*=\s*"[^"]*"\s*;\s*//\s*\[([^\]]*)\]', source, re.M)
+    match = re.search(r"^\s*" + re.escape(name) + r'\s*=\s*"[^"]*"\s*;\s*//\s*\[([^\]]*)\]', source(), re.M)
     if not match:
         sys.exit(f"Dropdown {name} not found in {SCAD}")
     return [option.strip() for option in match.group(1).split(",")]
@@ -106,18 +116,18 @@ class Picture:
         return f"{GALLERY_URL}/{self.file}"
 
 
-def bolt(head, drive, tip, title):
-    diameter, length = BOLT_SIZE
+def bolt(sizes, head, drive, tip, title):
     return Picture(
         f"bolt_{slug(head, drive, tip)}.png",
         title,
         {"Category": "Bolt", "Head": head, "Drive": drive, "Tip": tip,
-         "diameter": diameter, "hardware_length": length},
+         **size_params(sizes, "Bolt", head)},
     )
 
 
 def collect_sections():
     """Return [(heading, intro, pictures, details)], details being a list of (summary, pictures)."""
+    sizes = part_sizes()
     heads = dropdown("Head")
     drives = dropdown("Drive")
     tips = dropdown("Tip")
@@ -126,30 +136,31 @@ def collect_sections():
     sections.append((
         "Bolt heads",
         f"Shown with the {DEFAULT_DRIVE.lower()} drive. Every head can be combined with every drive and tip below.",
-        [bolt(h, DEFAULT_DRIVE, DEFAULT_TIP, h) for h in heads],
+        [bolt(sizes, h, DEFAULT_DRIVE, DEFAULT_TIP, h) for h in heads],
         [],
     ))
     sections.append((
         "Bolt drives",
         f"Shown on a {DEFAULT_HEAD.lower()}. Ignored for hex head bolts.",
-        [bolt(DEFAULT_HEAD, d, DEFAULT_TIP, d) for d in drives],
+        [bolt(sizes, DEFAULT_HEAD, d, DEFAULT_TIP, d) for d in drives],
         [],
     ))
     sections.append((
         "Bolt tips",
         f"Shown on a {DEFAULT_HEAD.lower()}. Ignored for grub screws.",
-        [bolt(DEFAULT_HEAD, DEFAULT_DRIVE, t, t) for t in tips],
+        [bolt(sizes, DEFAULT_HEAD, DEFAULT_DRIVE, t, t) for t in tips],
         [],
     ))
 
     pictures = []
+    bolt_diameter = size_params(sizes, "Bolt", DEFAULT_HEAD)["diameter"]
     for mode in dropdown("Icon_length"):
         for length in ICON_LENGTH_EXAMPLES:
             pictures.append(Picture(
                 f"icon_length_{slug(mode, str(length))}.png",
-                f"{mode}, {BOLT_SIZE[0]}x{length}",
+                f"{mode}, {bolt_diameter}x{length}",
                 {"Category": "Bolt", "Head": DEFAULT_HEAD, "Drive": DEFAULT_DRIVE, "Tip": DEFAULT_TIP,
-                 "diameter": BOLT_SIZE[0], "hardware_length": length, "Icon_length": mode},
+                 "diameter": bolt_diameter, "hardware_length": length, "Icon_length": mode},
             ))
     sections.append((
         "Icon length",
@@ -168,7 +179,7 @@ def collect_sections():
                     ([] if head in HEADS_WITHOUT_DRIVE else [drive])
                     + ([] if head in HEADS_WITHOUT_TIP else [tip])
                 ) or head
-                pictures.append(bolt(head, drive, tip, title))
+                pictures.append(bolt(sizes, head, drive, tip, title))
         combinations.append((f"{head} ({len(pictures)})", pictures))
     total = sum(len(p) for _, p in combinations)
     sections.append((
@@ -179,29 +190,19 @@ def collect_sections():
     ))
 
     simple = [
-        ("Nuts", "Nut", "Nut_type", NUT_SIZE, None, {}),
-        ("Washers", "Washer", "Washer_type", WASHER_SIZE, None, WASHER_SIZES),
-        ("Standoffs", "Standoff", "Standoff_type", STANDOFF_SIZE[0], STANDOFF_SIZE[1], {}),
-        ("Furniture hardware", "Furniture", "Furniture_type", FURNITURE_SIZE[0], FURNITURE_SIZE[1], {}),
+        ("Nuts", "Nut", "Nut_type"),
+        ("Washers", "Washer", "Washer_type"),
+        ("Standoffs", "Standoff", "Standoff_type"),
+        ("Furniture hardware", "Furniture", "Furniture_type"),
+        ("Other", "Other", "Other_type"),
     ]
-    for heading, category, variable, diameter, length, sizes in simple:
-        pictures = []
-        for option in dropdown(variable):
-            params = {"Category": category, variable: option, "diameter": diameter}
-            if length is not None:
-                params["hardware_length"] = length
-            if option in sizes:
-                params["diameter"], params["hardware_length"] = sizes[option]
-            pictures.append(Picture(f"{slug(category, option)}.png", option, params))
+    for heading, category, variable in simple:
+        pictures = [
+            Picture(f"{slug(category, option)}.png", option,
+                    {"Category": category, variable: option, **size_params(sizes, category, option)})
+            for option in dropdown(variable)
+        ]
         sections.append((heading, "", pictures, []))
-
-    pictures = []
-    for option in dropdown("Other_type"):
-        params = {"Category": "Other", "Other_type": option}
-        if option in OTHER_SIZES:
-            params["diameter"], params["hardware_length"] = OTHER_SIZES[option]
-        pictures.append(Picture(f"{slug('other', option)}.png", option, params))
-    sections.append(("Other", "", pictures, []))
 
     return sections
 
