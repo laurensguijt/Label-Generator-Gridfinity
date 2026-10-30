@@ -176,8 +176,8 @@ Every head with every drive and tip, 57 in total.
 
 |   |   |   |
 |:---:|:---:|:---:|
-| <img src="docs/gallery/other_wall_anchor.png" alt="Wall anchor" width="240"><br>Wall anchor | <img src="docs/gallery/other_heat_set_insert.png" alt="Heat set insert" width="240"><br>Heat set insert | <img src="docs/gallery/other_custom_text.png" alt="Custom text" width="240"><br>Custom text |
-| <img src="docs/gallery/other_none.png" alt="None" width="240"><br>None |   |   |
+| <img src="docs/gallery/other_wall_anchor.png" alt="Wall anchor" width="240"><br>Wall anchor | <img src="docs/gallery/other_heat_set_insert.png" alt="Heat set insert" width="240"><br>Heat set insert | <img src="docs/gallery/other_threaded_rod.png" alt="Threaded rod" width="240"><br>Threaded rod |
+| <img src="docs/gallery/other_custom_text.png" alt="Custom text" width="240"><br>Custom text | <img src="docs/gallery/other_none.png" alt="None" width="240"><br>None |   |
 
 <!-- gallery:end -->
 
