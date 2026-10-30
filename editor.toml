@@ -2,11 +2,114 @@
 # reads. The parameters and their dropdowns come from the customizer
 # annotations in the .scad files, so a new part shows up here by itself.
 #
+# What this file adds on top is presentation only: which sections start open,
+# which parameters are relevant for the chosen category, and a colour picker.
+#
 # Built and published by .github/workflows/web-configurator.yml.
 
 [project]
 name = "Label Generator for Gridfinity"
 uri = "https://github.com/laurensguijt/Label-Generator-Gridfinity"
+# The generator has no colour input, so upgrade the two hex fields into a
+# picker. Purely additive: if the fields are not found, the text stays usable.
+# Two presentation touches the generator has no setting for. Both are additive
+# and defensive: if the page ever changes shape, the form stays as it was.
+#   1. a colour picker next to the two hex colour fields
+#   2. hiding a section heading when everything under it is hidden anyway
+head-extra = '''
+<script>
+(function () {
+    var hex = /^#[0-9a-fA-F]{6}$/;
+
+    function addColourPickers() {
+        ["Label_color", "Content_color"].forEach(function (name) {
+            try {
+                var field = document.getElementById("parameter_" + name);
+                if (!field || field.dataset.hasPicker) return;
+                field.dataset.hasPicker = "1";
+
+                var picker = document.createElement("input");
+                picker.type = "color";
+                picker.setAttribute("aria-label", name.replace("_", " "));
+                picker.className = "form-control form-control-color";
+                picker.style.flex = "0 0 auto";
+                picker.style.width = "3rem";
+                picker.value = hex.test(field.value) ? field.value : "#000000";
+
+                picker.addEventListener("input", function () {
+                    field.value = picker.value;
+                    field.dispatchEvent(new Event("input", {bubbles: true}));
+                    field.dispatchEvent(new Event("change", {bubbles: true}));
+                });
+                field.addEventListener("change", function () {
+                    if (hex.test(field.value)) picker.value = field.value;
+                });
+
+                field.parentNode.insertBefore(picker, field);
+            } catch (e) {
+                /* leave the plain text field alone */
+            }
+        });
+    }
+
+    // A section whose parameters are all hidden for the current choice leaves
+    // an empty heading behind, so fold the heading away with them. Only write
+    // when the value really changes, otherwise the observer below keeps
+    // waking itself up.
+    function hideEmptySections() {
+        try {
+            document.querySelectorAll("h3.group-header").forEach(function (heading) {
+                var selector = heading.getAttribute("data-bs-target");
+                var body = selector && document.querySelector(selector);
+                if (!body) return;
+                var hasVisibleField = Array.prototype.some.call(
+                    body.querySelectorAll("[id^=parameter_]"),
+                    function (field) {
+                        var row = field.closest(".col-12") || field.parentElement;
+                        return row && getComputedStyle(row).display !== "none";
+                    });
+                var wanted = hasVisibleField ? "" : "none";
+                if (heading.style.display !== wanted) heading.style.display = wanted;
+            });
+        } catch (e) {
+            /* leave every heading visible */
+        }
+    }
+
+    var scheduled = false;
+    function refresh() {
+        if (scheduled) return;
+        scheduled = true;
+        setTimeout(function () {
+            scheduled = false;
+            addColourPickers();
+            hideEmptySections();
+        }, 0);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        refresh();
+
+        // The generator decides which fields to show after its own start up,
+        // so watching the form is more reliable than running once. Writing
+        // only real changes above keeps this from looping.
+        try {
+            new MutationObserver(refresh).observe(document.body, {
+                attributes: true,
+                attributeFilter: ["style", "class"],
+                childList: true,
+                subtree: true
+            });
+        } catch (e) {
+            /* fall back to the events below */
+        }
+
+        document.addEventListener("change", refresh);
+        document.addEventListener("input", refresh);
+    });
+})();
+</script>
+'''
 
 [openscad]
 # Embeds the fonts installed on the build machine, see the workflow
@@ -29,8 +132,73 @@ customizer</a> for those.</p>
 [[model]]
 file = "gridfinity_bin_label.scad"
 index = true
-export-file-stem = { fixed = "gridfinity_bin_label" }
+# Name the download after the label, not after the source file
+export-file-stem = { js = "(diameter + (hardware_length > 0 ? 'x' + hardware_length : '')).replace(/[^A-Za-z0-9._-]+/g, '-')" }
+
+# Only the section for the chosen category is relevant, the rest is noise
+[model.param-metadata.Head]
+display-condition = { js = "Category == 'Bolt'" }
+[model.param-metadata.Drive]
+display-condition = { js = "Category == 'Bolt' && Head != 'Hex head'" }
+[model.param-metadata.Tip]
+display-condition = { js = "Category == 'Bolt' && Head != 'Grub screw'" }
+[model.param-metadata.Nut_type]
+display-condition = { js = "Category == 'Nut'" }
+[model.param-metadata.Washer_type]
+display-condition = { js = "Category == 'Washer'" }
+[model.param-metadata.Standoff_type]
+display-condition = { js = "Category == 'Standoff'" }
+[model.param-metadata.Furniture_type]
+display-condition = { js = "Category == 'Furniture'" }
+[model.param-metadata.Other_type]
+display-condition = { js = "Category == 'Other'" }
+
+# The custom text lines only do something for the Custom text part
+[model.param-metadata.custom_text]
+display-condition = { js = "Category == 'Other' && Other_type == 'Custom text'" }
+[model.param-metadata.custom_text_line2]
+display-condition = { js = "Category == 'Other' && Other_type == 'Custom text'" }
+
+# Nuts, washers and plain text have no length to show
+[model.param-metadata.hardware_length]
+display-condition = { js = "!(Category == 'Nut' || (Category == 'Washer' && Washer_type != 'Spacer') || (Category == 'Other' && Other_type == 'Custom text'))" }
+[model.param-metadata.Icon_length]
+display-condition = { js = "Category == 'Bolt' || Category == 'Standoff' || Category == 'Furniture' || (Category == 'Washer' && Washer_type == 'Spacer') || (Category == 'Other' && (Other_type == 'Threaded rod' || Other_type == 'Compression spring'))" }
+
+# Raised text height only matters for raised text
+[model.param-metadata.raised_text_height]
+display-condition = { js = "text_type == 'Raised Text'" }
+
+# Meaningless here: the batch exporter renders a fixed list from the source,
+# and the legacy field exists for presets saved with much older versions.
+[model.param-metadata.batch_export]
+display-condition = { fixed = false }
+[model.param-metadata.Component]
+display-condition = { fixed = false }
+
+# Start on the part and the label, leave the rest folded away
+[model.tab-metadata."Text customization"]
+collapsed = true
+[model.tab-metadata."Settings for nerds"]
+collapsed = true
+description-collapsible-html = "<p>Dimensions of the label itself. The defaults fit Pred's bins.</p>"
+[model.tab-metadata."Batch exporter"]
+collapsed = true
+[model.tab-metadata."Legacy"]
+collapsed = true
 
 [[model]]
 file = "gridfinity_box_label.scad"
-export-file-stem = { fixed = "gridfinity_box_label" }
+export-file-stem = { js = "(LOGO_TYPE == 'char' ? LOGO_CHAR : 'box-label').replace(/[^A-Za-z0-9._-]+/g, '-')" }
+
+[model.param-metadata.LOGO_EMOJI]
+display-condition = { js = "LOGO_TYPE == 'emoji'" }
+[model.param-metadata.LOGO_CHAR]
+display-condition = { js = "LOGO_TYPE == 'char'" }
+[model.param-metadata.Hardware_type]
+display-condition = { js = "LOGO_TYPE == 'hardware'" }
+
+[model.tab-metadata."Text customization"]
+collapsed = true
+[model.tab-metadata."Additional settings"]
+collapsed = true
